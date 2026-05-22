@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-ink: #0d0d0d;
+  --color-canvas: #f5f4ef;
+  --color-off-white: #e8e6df;
+  --color-volt: #c8f135;
+  --color-volt-dim: #a8cc20;
+  --color-ash: #3a3a38;
+  --color-mute: #6b6b68;
+  --color-hairline: #2a2a28;
+  --color-hairline-light: #d4d2ca;
+
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-off-white);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Noise texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInSlow {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+@keyframes scrollPulse {
+  0%   { opacity: 0; transform: scaleY(0); transform-origin: top; }
+  50%  { opacity: 1; transform: scaleY(1); }
+  100% { opacity: 0; transform: scaleY(1); transform-origin: bottom; }
+}
+
+.animate-rise-1 { animation: riseIn 1s 0.3s ease forwards; opacity: 0; }
+.animate-rise-2 { animation: riseIn 1s 0.6s ease forwards; opacity: 0; }
+.animate-rise-3 { animation: riseIn 1s 0.9s ease forwards; opacity: 0; }
+.animate-rise-4 { animation: riseIn 1s 1.2s ease forwards; opacity: 0; }
+.animate-rise-5 { animation: riseIn 1s 1.8s ease forwards; opacity: 0; }
+.animate-fade-slow { animation: fadeInSlow 2.4s ease forwards; opacity: 0; }
+.animate-pulse-dot { animation: pulse-dot 2s infinite; }
+.animate-scroll-pulse { animation: scrollPulse 2s 2s infinite; }
