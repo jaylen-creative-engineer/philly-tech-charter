@@ -2,6 +2,15 @@ import Pill from "../components/Pill";
 
 export default function Hero() {
   return (
+    <>
+    {/* Opening statement — the first thing a reader sees */}
+    <div className="w-full border-b border-[var(--color-hairline)] px-12 py-5 flex items-center justify-center max-md:px-6">
+      <p className="animate-rise-1 font-serif italic text-[var(--color-off-white)] text-center tracking-wide"
+        style={{ fontSize: "clamp(15px, 1.6vw, 20px)" }}>
+        We Are Living Through History.
+      </p>
+    </div>
+
     <section className="relative min-h-screen flex flex-col justify-end px-12 pb-16 overflow-hidden">
       {/* Ghost 250 */}
       <div
@@ -45,5 +54,6 @@ export default function Hero() {
         <Pill variant="outline" href="#contribute">Add Your Voice</Pill>
       </div>
     </section>
+    </>
   );
 }
