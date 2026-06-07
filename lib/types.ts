@@ -4,6 +4,14 @@ export interface Contribution {
   context: string;
   type: ContributionType;
   text: string;
+  principleTitle?: string;
+  createdAt: string;
+}
+
+export interface Signatory {
+  id: string;
+  name: string;
+  context: string;
   createdAt: string;
 }
 

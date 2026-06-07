@@ -22,16 +22,25 @@ export default function Contribute({ onSubmit }: Props) {
   const [name, setName] = useState("");
   const [context, setContext] = useState("");
   const [type, setType] = useState<ContributionType | "">("");
+  const [principleTitle, setPrincipleTitle] = useState("");
   const [text, setText] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit() {
+  const isNewPrinciple = type === "A new principle";
+
+  async function handleSubmit() {
     if (!type || !text.trim()) {
       setError("Please select a contribution type and write your contribution.");
       return;
     }
+    if (isNewPrinciple && !principleTitle.trim()) {
+      setError("Please give your principle a title.");
+      return;
+    }
     setError("");
+    setLoading(true);
 
     const contribution: Contribution = {
       id: `contrib-${Date.now()}`,
@@ -39,15 +48,28 @@ export default function Contribute({ onSubmit }: Props) {
       context: context.trim(),
       type: type as ContributionType,
       text: text.trim(),
+      principleTitle: isNewPrinciple ? principleTitle.trim() : undefined,
       createdAt: new Date().toISOString(),
     };
+
+    try {
+      await fetch("/api/contributions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contribution),
+      });
+    } catch {
+      // Non-fatal — optimistic update still happens locally
+    }
 
     onSubmit(contribution);
     setSubmitted(true);
     setName("");
     setContext("");
     setType("");
+    setPrincipleTitle("");
     setText("");
+    setLoading(false);
     setTimeout(() => setSubmitted(false), 4000);
   }
 
@@ -130,12 +152,31 @@ export default function Contribute({ onSubmit }: Props) {
             ))}
           </select>
 
+          {isNewPrinciple && (
+            <div style={{ animation: "riseIn 0.35s ease forwards" }}>
+              <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
+                Principle Title
+              </label>
+              <input
+                className={inputBase}
+                type="text"
+                placeholder="A short, memorable phrase — e.g. 'Transparency before deployment'"
+                value={principleTitle}
+                onChange={(e) => setPrincipleTitle(e.target.value)}
+              />
+            </div>
+          )}
+
           <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
-            Your Contribution
+            {isNewPrinciple ? "Principle Body" : "Your Contribution"}
           </label>
           <textarea
             className="w-full bg-transparent border border-[var(--color-hairline)] text-[var(--color-off-white)] font-sans text-[15px] font-light p-4 outline-none transition-colors duration-200 focus:border-[var(--color-volt)]/40 mb-2 rounded-sm resize-y min-h-[120px] placeholder:text-[var(--color-mute)]"
-            placeholder="Write your perspective here. There is no minimum or maximum — speak as clearly as you can."
+            placeholder={
+              isNewPrinciple
+                ? "Describe the principle in 1–3 sentences. What should we commit to, and why does it matter?"
+                : "Write your perspective here. There is no minimum or maximum — speak as clearly as you can."
+            }
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
@@ -143,8 +184,12 @@ export default function Contribute({ onSubmit }: Props) {
             By submitting, you agree your contribution may be incorporated into future versions of this document under your name.
           </p>
 
-          <Pill variant="volt" onClick={handleSubmit} className="w-full justify-center text-[14px]">
-            Submit Contribution
+          <Pill
+            variant="volt"
+            onClick={handleSubmit}
+            className="w-full justify-center text-[14px]"
+          >
+            {loading ? "Submitting…" : "Submit Contribution"}
           </Pill>
         </div>
       </ScrollReveal>
