@@ -4,11 +4,7 @@
     {
       "name": "dev",
       "runtimeExecutable": "/bin/zsh",
-<<<<<<< Updated upstream
-      "runtimeArgs": ["-c", "export PATH=/opt/homebrew/bin:$PATH && npm run dev"],
-=======
       "runtimeArgs": ["-lc", "export PATH=/opt/homebrew/bin:$PATH && npm run dev"],
->>>>>>> Stashed changes
       "port": 3000
     }
   ]
