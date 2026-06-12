@@ -13,7 +13,7 @@ function ContributionCard({ c }: { c: Contribution }) {
   const isNew = c.id.startsWith("contrib-");
   return (
     <div
-      className="bg-[var(--color-paper)] border-2 border-[var(--color-rule-light)] border-t-[6px] border-t-[var(--color-blue)] p-8"
+      className="card-surface bg-[var(--color-paper)] border-2 border-[var(--color-rule-light)] border-t-[6px] border-t-[var(--color-blue)] p-8"
       style={{ animation: isNew ? "riseIn 0.6s ease forwards" : "none" }}
     >
       <p className="font-display text-[9px] tracking-[0.25em] uppercase text-[var(--color-red)] mb-3.5">
@@ -42,7 +42,7 @@ export default function Voices({ contributions }: Props) {
   const displayed = tab === "principles" ? principles : contributions;
 
   const tabBase =
-    "font-display text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 transition-colors duration-200 cursor-pointer border-2";
+    "font-display text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 rounded-[var(--radius-md)] transition-colors duration-200 cursor-pointer border-2";
   const activeTab =
     "bg-[var(--color-blue)] border-[var(--color-blue)] text-[var(--color-cream)]";
   const inactiveTab =

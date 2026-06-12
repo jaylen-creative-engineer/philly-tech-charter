@@ -1,47 +1,134 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   className?: string;
 }
 
-interface Wave {
-  from: string;
-  to: string;
-  color: string;
-  width: number;
-  dur: string;
+/** Ten y-coordinates for the four cubic segments of one wave edge (left → right). */
+type WaveY = [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+];
+
+interface Keyframe {
+  boundaries: [WaveY, WaveY, WaveY, WaveY];
 }
 
-// Each wave morphs between two control-point configurations (same command
-// structure, required for SMIL path interpolation) to ripple like a flag.
-const WAVES: Wave[] = [
+const KEYFRAMES: Keyframe[] = [
   {
-    from: "M-60,40 C260,-80 480,300 820,140 C1080,20 1300,160 1500,60",
-    to: "M-60,80 C260,-10 480,220 820,180 C1080,70 1300,100 1500,100",
-    color: "var(--color-red)",
-    width: 130,
-    dur: "7s",
+    boundaries: [
+      [18, 0, 48, 24, 4, 40, 18, 12, 22, 18],
+      [78, 58, 108, 84, 64, 100, 78, 72, 82, 78],
+      [138, 118, 168, 144, 124, 160, 138, 132, 142, 138],
+      [196, 178, 208, 192, 172, 198, 188, 184, 192, 188],
+    ],
   },
   {
-    from: "M-60,140 C280,20 520,380 880,200 C1120,80 1320,220 1500,140",
-    to: "M-60,110 C280,70 520,300 880,160 C1120,140 1320,160 1500,100",
-    color: "var(--color-cream)",
-    width: 64,
-    dur: "5.5s",
+    boundaries: [
+      [30, 14, 34, 40, 22, 56, 36, 30, 40, 38],
+      [90, 74, 94, 100, 82, 116, 96, 92, 100, 98],
+      [150, 134, 154, 160, 142, 176, 156, 152, 160, 158],
+      [208, 190, 220, 204, 184, 210, 200, 196, 204, 200],
+    ],
   },
   {
-    from: "M-60,250 C300,140 560,420 940,260 C1160,170 1340,280 1500,230",
-    to: "M-60,220 C300,190 560,350 940,300 C1160,130 1340,230 1500,260",
-    color: "var(--color-red)",
-    width: 90,
-    dur: "8.5s",
+    boundaries: [
+      [22, 4, 44, 30, 8, 46, 24, 16, 26, 22],
+      [82, 62, 102, 88, 68, 104, 84, 76, 86, 82],
+      [142, 122, 162, 148, 128, 164, 144, 136, 146, 142],
+      [200, 182, 212, 196, 176, 202, 192, 188, 196, 192],
+    ],
   },
 ];
 
+const COLORS = ["var(--color-red)", "var(--color-cream)", "var(--color-red)"] as const;
+const MORPH_MS = 5200;
+const SWAY_MS = 9000;
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+function easeInOutSine(t: number) {
+  return -(Math.cos(Math.PI * t) - 1) / 2;
+}
+
+/** Loop through keyframes with smooth easing between each pair. */
+function morphBoundaries(elapsed: number, duration: number): Keyframe["boundaries"] {
+  const count = KEYFRAMES.length;
+  const segment = duration / count;
+  const raw = (elapsed % duration) / segment;
+  const index = Math.floor(raw) % count;
+  const next = (index + 1) % count;
+  const localT = easeInOutSine(raw - index);
+
+  const from = KEYFRAMES[index].boundaries;
+  const to = KEYFRAMES[next].boundaries;
+  return from.map((wave, i) =>
+    wave.map((v, j) => lerp(v, to[i][j], localT))
+  ) as Keyframe["boundaries"];
+}
+
+/** Continuous ripple that travels left → right across the whole flag stack. */
+function applyTravelingRipple(
+  boundaries: Keyframe["boundaries"],
+  elapsed: number
+): Keyframe["boundaries"] {
+  const t = elapsed * 0.001;
+  return boundaries.map((wave) =>
+    wave.map((y, i) => {
+      const phase = i * 0.62;
+      const primary = Math.sin(t * 2.4 + phase) * 5.5;
+      const secondary = Math.sin(t * 3.7 + phase * 1.35) * 3;
+      const tertiary = Math.sin(t * 1.3 + phase * 0.45) * 2;
+      return y + primary + secondary + tertiary;
+    })
+  ) as Keyframe["boundaries"];
+}
+
+function bandPath(top: WaveY, bottom: WaveY): string {
+  return (
+    `M-120,${top[0]} C180,${top[1]} 420,${top[2]} 660,${top[3]} ` +
+    `C900,${top[4]} 1140,${top[5]} 1380,${top[6]} C1460,${top[7]} 1520,${top[8]} 1560,${top[9]} ` +
+    `L1560,${bottom[9]} C1520,${bottom[8]} 1460,${bottom[7]} 1380,${bottom[6]} ` +
+    `C1140,${bottom[5]} 900,${bottom[4]} 660,${bottom[3]} C420,${bottom[2]} 180,${bottom[1]} -120,${bottom[0]} Z`
+  );
+}
+
+function pathsFromBoundaries(b: [WaveY, WaveY, WaveY, WaveY]): string[] {
+  return [bandPath(b[0], b[1]), bandPath(b[1], b[2]), bandPath(b[2], b[3])];
+}
+
+function buildTransform(elapsed: number): string {
+  const swayPhase = (elapsed % SWAY_MS) / SWAY_MS;
+  const angle = Math.PI * 2 * swayPhase;
+
+  const swayX = Math.sin(angle) * 20 + Math.sin(angle * 2.1 + 0.6) * 6;
+  const swayY = Math.sin(angle + Math.PI / 3) * 5 + Math.cos(angle * 1.8) * 2;
+  const rotate = Math.sin(elapsed * 0.00055) * 1.1;
+  const scale = 1 + Math.sin(elapsed * 0.00085) * 0.012;
+
+  return `translate(${swayX} ${swayY}) rotate(${rotate} 720 120) scale(${scale})`;
+}
+
 export default function FlagWaves({ className = "" }: Props) {
+  const [paths, setPaths] = useState(() =>
+    pathsFromBoundaries(KEYFRAMES[0].boundaries)
+  );
+  const [transform, setTransform] = useState("translate(0 0)");
   const [animate, setAnimate] = useState(true);
+  const rafRef = useRef<number>(0);
+  const startRef = useRef<number | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -51,29 +138,59 @@ export default function FlagWaves({ className = "" }: Props) {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  useEffect(() => {
+    if (!animate) {
+      setPaths(pathsFromBoundaries(KEYFRAMES[0].boundaries));
+      setTransform("translate(0 0)");
+      startRef.current = null;
+      return;
+    }
+
+    const tick = (now: number) => {
+      if (startRef.current === null) startRef.current = now;
+      const elapsed = now - startRef.current;
+
+      const morphed = morphBoundaries(elapsed, MORPH_MS);
+      const boundaries = applyTravelingRipple(morphed, elapsed);
+      setPaths(pathsFromBoundaries(boundaries));
+      setTransform(buildTransform(elapsed));
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [animate]);
+
   return (
     <svg
-      viewBox="0 0 1440 300"
-      preserveAspectRatio="none"
+      viewBox="0 0 1440 240"
+      preserveAspectRatio="xMidYMid slice"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      shapeRendering="geometricPrecision"
     >
-      {WAVES.map((w, i) => (
-        <path key={i} d={w.from} stroke={w.color} strokeWidth={w.width} fill="none">
-          {animate && (
-            <animate
-              attributeName="d"
-              dur={w.dur}
-              repeatCount="indefinite"
-              calcMode="spline"
-              keyTimes="0;0.5;1"
-              keySplines="0.42 0 0.58 1;0.42 0 0.58 1"
-              values={`${w.from};${w.to};${w.from}`}
-            />
-          )}
-        </path>
-      ))}
+      <defs>
+        <linearGradient id="flag-wave-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="white" stopOpacity="1" />
+          <stop offset="52%" stopColor="white" stopOpacity="1" />
+          <stop offset="68%" stopColor="white" stopOpacity="0.82" />
+          <stop offset="80%" stopColor="white" stopOpacity="0.48" />
+          <stop offset="90%" stopColor="white" stopOpacity="0.18" />
+          <stop offset="97%" stopColor="white" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+        <mask id="flag-wave-mask">
+          <rect width="100%" height="100%" fill="url(#flag-wave-fade)" />
+        </mask>
+      </defs>
+
+      <g mask="url(#flag-wave-mask)" transform={transform}>
+        {paths.map((d, i) => (
+          <path key={i} d={d} fill={COLORS[i]} />
+        ))}
+      </g>
     </svg>
   );
 }

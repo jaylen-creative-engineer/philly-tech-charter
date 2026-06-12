@@ -18,7 +18,7 @@ export default function Pill({
   type = "button",
 }: Props) {
   const base =
-    "inline-flex items-center gap-2 font-display text-[13px] uppercase tracking-[0.08em] px-8 py-4 transition-colors duration-150 cursor-pointer select-none";
+    "inline-flex items-center gap-2 font-display text-[12px] uppercase tracking-[0.12em] px-8 py-3.5 rounded-[var(--radius-md)] transition-all duration-200 cursor-pointer select-none hover:translate-y-[-1px]";
 
   const variants = {
     red: "bg-[var(--color-red)] text-[var(--color-cream)] hover:bg-[var(--color-red-deep)]",

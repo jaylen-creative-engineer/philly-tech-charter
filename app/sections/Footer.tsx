@@ -1,6 +1,10 @@
+import BlueTexture from "../components/BlueTexture";
+
 export default function Footer() {
   return (
-    <footer className="bg-[var(--color-blue)] border-t-[6px] border-[var(--color-red)] text-[var(--color-cream)] px-12 py-12 flex justify-between items-center max-md:flex-col max-md:gap-6 max-md:text-center max-md:px-6">
+    <footer className="blue-surface border-t-[6px] border-[var(--color-red)] text-[var(--color-cream)] px-12 py-12 max-md:px-6">
+      <BlueTexture />
+      <div className="relative z-10 flex justify-between items-center w-full max-md:flex-col max-md:gap-6 max-md:text-center">
       <p className="font-display text-[16px] leading-[1.3]">
         Philadelphia
         <br />
@@ -14,6 +18,7 @@ export default function Footer() {
         <a href="#contribute" className="text-[var(--color-gold)] no-underline hover:underline">
           Contribute to v1.1 →
         </a>
+      </div>
       </div>
     </footer>
   );

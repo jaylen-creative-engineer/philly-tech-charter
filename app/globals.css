@@ -1,25 +1,37 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Poster palette — vintage Philadelphia travel poster */
-  --color-red: #d7282f;
+  /* Poster palette — vintage Philadelphia travel poster, modernized */
+  --color-red: #e02e35;
   --color-red-deep: #b21e24;
-  --color-blue: #1e3a8f;
-  --color-blue-deep: #162d72;
-  --color-cream: #f6f0e4;
-  --color-paper: #fdfaf2;
+  --color-blue: #1a3580;
+  --color-blue-deep: #122660;
+  --color-cream: #f5f0e6;
+  --color-paper: #fdfaf4;
   --color-brick: #b65a2e;
-  --color-gold: #d9a33e;
+  --color-gold: #e4ad42;
   --color-brown: #3a2415;
-  --color-ink: #2b2118;
+  --color-ink: #1e1812;
   --color-mute: #6e6353;
   --color-rule: #2b2118;
   --color-rule-light: #ded5c2;
+  --color-glow: rgba(228, 173, 66, 0.35);
 
-  --font-display: var(--font-archivo-black), 'Arial Black', sans-serif;
-  --font-sans: var(--font-archivo), Helvetica, Arial, sans-serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --font-display: var(--font-syne), 'Arial Black', sans-serif;
+  --font-sans: var(--font-dm-sans), Helvetica, Arial, sans-serif;
 }
 
+/* Lenis drives smooth scrolling; native smooth only when Lenis is off (reduced motion) */
+@media (prefers-reduced-motion: no-preference) {
+  html.lenis {
+    scroll-behavior: auto;
+  }
+}
 html {
   scroll-behavior: smooth;
 }
@@ -29,6 +41,7 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Faint paper grain — vintage print texture */
@@ -37,7 +50,7 @@ body::before {
   position: fixed;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-  opacity: 0.04;
+  opacity: 0.035;
   pointer-events: none;
   z-index: 9999;
 }
@@ -45,6 +58,8 @@ body::before {
 .font-display {
   font-family: var(--font-display);
 }
+
+/* ── Keyframes ── */
 
 @keyframes riseIn {
   from { opacity: 0; transform: translateY(20px); }
@@ -72,6 +87,64 @@ body::before {
   100% { opacity: 0; transform: scaleY(1); transform-origin: bottom; }
 }
 
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) }
+  33%      { transform: translate3d(0, -10px, 0) }
+  66%      { transform: translate3d(0, 6px, 0) }
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes navSlide {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px var(--color-glow), 0 0 40px rgba(228, 173, 66, 0.15); }
+  50%       { box-shadow: 0 0 35px var(--color-glow), 0 0 60px rgba(228, 173, 66, 0.25); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes yearTick {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes enterPulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+@keyframes gridDrift {
+  from { transform: translateY(0); }
+  to   { transform: translateY(40px); }
+}
+
+.animate-drift {
+  animation: drift 10s ease-in-out infinite;
+}
+
+.marquee-track {
+  animation: marquee 36s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift,
+  .marquee-track,
+  .blue-texture-grid {
+    animation: none;
+  }
+}
+
+/* ── Animation utilities ── */
+
 .animate-rise-1 { animation: riseIn 1s 0.3s ease forwards; opacity: 0; }
 .animate-rise-2 { animation: riseIn 1s 0.6s ease forwards; opacity: 0; }
 .animate-rise-3 { animation: riseIn 1s 0.9s ease forwards; opacity: 0; }
@@ -81,9 +154,174 @@ body::before {
 .animate-pulse-dot { animation: pulse-dot 2s infinite; }
 .animate-scroll-pulse { animation: scrollPulse 2s 2s infinite; }
 .animate-star-pop { animation: starPop 0.7s 0.15s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; opacity: 0; }
+.animate-glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+.animate-enter-pulse { animation: enterPulse 2s ease-in-out infinite; }
+.animate-year-tick { animation: yearTick 0.8s 0.5s ease forwards; opacity: 0; }
+
+/* Welcome overlay — always plays, independent of main[data-entered] */
+.welcome-animate-rise-1 { animation: riseIn 1s 0.3s ease forwards; opacity: 0; }
+.welcome-animate-rise-2 { animation: riseIn 1s 0.6s ease forwards; opacity: 0; }
+.welcome-animate-rise-3 { animation: riseIn 1s 0.9s ease forwards; opacity: 0; }
+.welcome-animate-rise-4 { animation: riseIn 1s 1.2s ease forwards, enterPulse 2s 2.2s ease-in-out infinite; opacity: 0; }
+
+.welcome-enter-btn {
+  border-radius: var(--radius-md);
+}
 
 /* Hold the hero entrance animations until the welcome curtain lifts */
 main[data-entered="false"] [class^="animate-"],
 main[data-entered="false"] [class*=" animate-"] {
   animation-play-state: paused;
+}
+
+/* ── Blue surface texture ── */
+
+.blue-surface {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-blue);
+}
+
+/* Hero flag ribbons need room to wave — texture layers stay clipped */
+.hero-surface {
+  overflow: visible;
+}
+
+/* Full-hero atmospheric blend — flag zone through CTAs, above tri-color divider */
+.hero-flag-blend {
+  background:
+    radial-gradient(
+      ellipse 92% 46% at 50% 40%,
+      rgba(18, 38, 96, 0.52) 0%,
+      rgba(26, 53, 128, 0.34) 34%,
+      rgba(26, 53, 128, 0.14) 56%,
+      transparent 74%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      transparent 32%,
+      rgba(26, 53, 128, 0.05) 40%,
+      rgba(26, 53, 128, 0.14) 48%,
+      rgba(26, 53, 128, 0.28) 56%,
+      rgba(26, 53, 128, 0.46) 64%,
+      rgba(26, 53, 128, 0.64) 72%,
+      rgba(26, 53, 128, 0.8) 80%,
+      rgba(26, 53, 128, 0.92) 88%,
+      var(--color-blue) 94%,
+      var(--color-blue) 100%
+    );
+}
+
+.hero-flag-svg {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 54%,
+    rgba(0, 0, 0, 0.92) 64%,
+    rgba(0, 0, 0, 0.68) 74%,
+    rgba(0, 0, 0, 0.38) 84%,
+    rgba(0, 0, 0, 0.14) 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 54%,
+    rgba(0, 0, 0, 0.92) 64%,
+    rgba(0, 0, 0, 0.68) 74%,
+    rgba(0, 0, 0, 0.38) 84%,
+    rgba(0, 0, 0, 0.14) 92%,
+    transparent 100%
+  );
+}
+
+.blue-texture-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(245, 240, 230, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 240, 230, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+  animation: gridDrift 28s linear infinite;
+}
+
+.blue-texture-grid--hero {
+  opacity: 0.55;
+}
+
+.blue-texture-grid--section {
+  opacity: 0.35;
+}
+
+.blue-texture-fine {
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  background-image:
+    linear-gradient(rgba(228, 173, 66, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(228, 173, 66, 0.05) 1px, transparent 1px);
+  background-size: 11px 11px;
+}
+
+.blue-texture-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+}
+
+.blue-texture-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 90% 80% at 50% 50%, transparent 25%, rgba(18, 38, 96, 0.3) 100%),
+    linear-gradient(180deg, rgba(18, 38, 96, 0.15) 0%, transparent 30%, transparent 70%, rgba(18, 38, 96, 0.2) 100%);
+}
+
+.hero-glow {
+  background: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(228, 173, 66, 0.14) 0%, transparent 70%);
+}
+
+.card-surface {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.preview-card {
+  border: 2px solid var(--color-rule-light);
+  border-top: 5px solid var(--color-blue);
+  background: var(--color-paper);
+  border-radius: var(--radius-lg);
+}
+
+.type-card {
+  border: 2px solid var(--color-rule-light);
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.type-card:hover {
+  border-color: var(--color-blue);
+  transform: translateY(-1px);
+}
+
+.type-card[data-selected="true"] {
+  border-color: var(--color-red);
+  background: rgba(224, 46, 53, 0.04);
+}
+
+.shimmer-text {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) 0%,
+    var(--color-cream) 40%,
+    var(--color-gold) 60%,
+    var(--color-cream) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
 }

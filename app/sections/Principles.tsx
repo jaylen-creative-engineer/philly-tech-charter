@@ -1,13 +1,15 @@
 import ScrollReveal from "../components/ScrollReveal";
+import BlueTexture from "../components/BlueTexture";
 import { PRINCIPLES } from "../../lib/data";
 
 export default function Principles() {
   return (
     <section
       id="principles"
-      className="py-24 px-12 bg-[var(--color-blue)] max-md:px-6"
+      className="blue-surface py-24 px-12 max-md:px-6"
     >
-      <div className="max-w-[1100px] mx-auto">
+      <BlueTexture />
+      <div className="max-w-[1100px] mx-auto relative z-10">
         {/* Header */}
         <ScrollReveal className="flex items-end justify-between gap-12 mb-16 max-md:flex-col max-md:items-start">
           <h2
@@ -29,7 +31,7 @@ export default function Principles() {
         <div className="grid grid-cols-3 gap-3 max-md:grid-cols-1">
           {PRINCIPLES.map((p, i) => (
             <ScrollReveal key={p.num} delay={i * 60}>
-              <div className="bg-[var(--color-cream)] p-9 h-full border-b-[6px] border-[var(--color-red)]">
+              <div className="card-surface bg-[var(--color-cream)] p-9 h-full border-b-[6px] border-[var(--color-red)]">
                 <p className="font-display text-[26px] leading-none text-[var(--color-red)] mb-4">
                   {p.num}
                 </p>
