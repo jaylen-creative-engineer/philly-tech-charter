@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabase";
+import { getSupabase } from "../../../lib/supabase";
 import { Signatory } from "../../../lib/types";
 
 export async function GET() {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
   const { data, error } = await supabase
     .from("signatories")
     .select("*")
@@ -23,6 +28,11 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
   const body: Signatory = await req.json();
 
   const { error } = await supabase.from("signatories").insert({

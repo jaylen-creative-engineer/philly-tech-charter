@@ -4,6 +4,7 @@ import { useState } from "react";
 import ScrollReveal from "../components/ScrollReveal";
 import SectionLabel from "../components/SectionLabel";
 import Pill from "../components/Pill";
+import CountUp from "../components/CountUp";
 import { Signatory } from "../../lib/types";
 
 interface Props {
@@ -81,7 +82,7 @@ export default function Sign({ signatoryCount, onSign }: Props) {
         </p>
         {signatoryCount > 0 && (
           <p className="text-[13px] font-semibold text-[var(--color-volt)] tracking-[0.05em] mb-12">
-            {signatoryCount.toLocaleString()} {signatoryCount === 1 ? "person has" : "people have"} signed.
+            <CountUp value={signatoryCount} /> {signatoryCount === 1 ? "person has" : "people have"} signed.
           </p>
         )}
       </ScrollReveal>

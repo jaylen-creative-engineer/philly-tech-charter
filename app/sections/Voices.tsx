@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import { Contribution } from "../../lib/types";
 
 interface Props {
@@ -13,7 +14,7 @@ function ContributionCard({ c }: { c: Contribution }) {
   const isNew = c.id.startsWith("contrib-");
   return (
     <div
-      className="bg-[var(--color-ash)] p-8"
+      className="bg-[var(--color-ash)] p-8 h-full"
       style={{ animation: isNew ? "riseIn 0.6s ease forwards" : "none" }}
     >
       <p className="text-[9px] font-semibold tracking-[0.25em] uppercase text-[var(--color-volt)] mb-3.5">
@@ -87,8 +88,17 @@ export default function Voices({ contributions }: Props) {
         </p>
       ) : (
         <div className="grid gap-0.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
-          {displayed.map((c) => (
-            <ContributionCard key={c.id} c={c} />
+          {displayed.map((c, i) => (
+            <motion.div
+              key={c.id}
+              layout
+              initial={{ opacity: 0, y: 28 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+              transition={{ duration: 0.55, delay: (i % 3) * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <ContributionCard c={c} />
+            </motion.div>
           ))}
         </div>
       )}

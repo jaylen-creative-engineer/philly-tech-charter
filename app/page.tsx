@@ -10,7 +10,11 @@ import Contribute from "./sections/Contribute";
 import Voices from "./sections/Voices";
 import Sign from "./sections/Sign";
 import SignatoryWall from "./sections/SignatoryWall";
+import ClosingCTA from "./sections/ClosingCTA";
 import Footer from "./sections/Footer";
+import SmoothScroll from "./components/SmoothScroll";
+import StickyNav from "./components/StickyNav";
+import Marquee from "./components/Marquee";
 import { Contribution, Signatory } from "../lib/types";
 import { SEED_CONTRIBUTIONS } from "../lib/data";
 
@@ -56,18 +60,29 @@ export default function Home() {
   }
 
   return (
-    <main>
-      <Hero />
-      <div className="h-px bg-[var(--color-hairline)]" />
-      <Intro />
-      <Statement />
-      <Document />
-      <Principles />
-      <Contribute onSubmit={handleContribution} />
-      <Voices contributions={contributions} />
-      <Sign signatoryCount={signatories.length} onSign={handleSign} />
-      <SignatoryWall signatories={signatories} />
-      <Footer />
-    </main>
+    <SmoothScroll>
+      <StickyNav />
+      <main>
+        <Hero />
+        <Marquee
+          items={[
+            "A living document",
+            "Written in Philadelphia",
+            "On the occasion of America's 250th year",
+            "Open to every voice",
+          ]}
+        />
+        <Intro />
+        <Statement />
+        <Document />
+        <Principles />
+        <Contribute onSubmit={handleContribution} />
+        <Voices contributions={contributions} />
+        <Sign signatoryCount={signatories.length} onSign={handleSign} />
+        <SignatoryWall signatories={signatories} />
+        <ClosingCTA />
+        <Footer />
+      </main>
+    </SmoothScroll>
   );
 }

@@ -15,6 +15,12 @@
   --font-sans: 'DM Sans', system-ui, sans-serif;
 }
 
+/* Lenis drives smooth scrolling; native smooth only when Lenis is off (reduced motion) */
+@media (prefers-reduced-motion: no-preference) {
+  html.lenis {
+    scroll-behavior: auto;
+  }
+}
 html {
   scroll-behavior: smooth;
 }
@@ -56,6 +62,31 @@ body::before {
   0%   { opacity: 0; transform: scaleY(0); transform-origin: top; }
   50%  { opacity: 1; transform: scaleY(1); }
   100% { opacity: 0; transform: scaleY(1); transform-origin: bottom; }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) }
+  33%      { transform: translate3d(0, -10px, 0) }
+  66%      { transform: translate3d(0, 6px, 0) }
+}
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+
+.animate-drift {
+  animation: drift 10s ease-in-out infinite;
+}
+
+.marquee-track {
+  animation: marquee 36s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift,
+  .marquee-track {
+    animation: none;
+  }
 }
 
 .animate-rise-1 { animation: riseIn 1s 0.3s ease forwards; opacity: 0; }
