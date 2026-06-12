@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
-  variant?: "volt" | "outline" | "ghost";
+  variant?: "red" | "blue" | "outline" | "cream";
   href?: string;
   onClick?: () => void;
   className?: string;
@@ -18,14 +18,15 @@ export default function Pill({
   type = "button",
 }: Props) {
   const base =
-    "inline-flex items-center gap-2 font-sans text-[13px] font-medium tracking-[0.05em] px-7 py-3.5 rounded-full transition-all duration-200 cursor-pointer select-none";
+    "inline-flex items-center gap-2 font-display text-[12px] uppercase tracking-[0.12em] px-8 py-3.5 rounded-[var(--radius-md)] transition-all duration-200 cursor-pointer select-none hover:translate-y-[-1px]";
 
   const variants = {
-    volt: "bg-[var(--color-volt)] text-[var(--color-ink)] border-0 hover:bg-[var(--color-volt-dim)] active:scale-95",
+    red: "bg-[var(--color-red)] text-[var(--color-cream)] hover:bg-[var(--color-red-deep)]",
+    blue: "bg-[var(--color-blue)] text-[var(--color-cream)] hover:bg-[var(--color-blue-deep)]",
+    cream:
+      "bg-[var(--color-cream)] text-[var(--color-blue)] hover:bg-[var(--color-paper)]",
     outline:
-      "bg-transparent text-[var(--color-off-white)] border border-white/25 hover:border-white/50",
-    ghost:
-      "bg-white/5 text-[var(--color-off-white)] border border-[var(--color-hairline)] hover:bg-white/10",
+      "bg-transparent text-[var(--color-blue)] border-[3px] border-[var(--color-blue)] hover:bg-[var(--color-blue)] hover:text-[var(--color-cream)]",
   };
 
   const cls = `${base} ${variants[variant]} ${className}`;

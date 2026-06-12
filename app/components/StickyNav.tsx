@@ -46,7 +46,7 @@ export default function StickyNav() {
           ))}
         </nav>
 
-        <Pill variant="volt" href="#contribute" className="!px-5 !py-2 text-[11px]">
+        <Pill variant="red" href="#contribute" className="!px-5 !py-2 text-[11px]">
           Add Your Voice
         </Pill>
       </div>

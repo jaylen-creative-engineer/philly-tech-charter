@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Welcome from "./components/Welcome";
+import Nav from "./components/Nav";
 import Hero from "./sections/Hero";
 import Intro from "./sections/Intro";
 import Statement from "./sections/Statement";
@@ -12,17 +14,16 @@ import Sign from "./sections/Sign";
 import SignatoryWall from "./sections/SignatoryWall";
 import ClosingCTA from "./sections/ClosingCTA";
 import Footer from "./sections/Footer";
-import SmoothScroll from "./components/SmoothScroll";
-import StickyNav from "./components/StickyNav";
-import Marquee from "./components/Marquee";
 import { Contribution, Signatory } from "../lib/types";
 import { SEED_CONTRIBUTIONS } from "../lib/data";
 
 export default function Home() {
   const [contributions, setContributions] = useState<Contribution[]>(SEED_CONTRIBUTIONS);
   const [signatories, setSignatories] = useState<Signatory[]>([]);
+  const [entered, setEntered] = useState(false);
 
-  // Fetch persisted data on mount
+  const handleWelcomeComplete = useCallback(() => setEntered(true), []);
+
   useEffect(() => {
     fetch("/api/contributions")
       .then((r) => r.json())
@@ -31,9 +32,7 @@ export default function Home() {
           setContributions(data);
         }
       })
-      .catch(() => {
-        // Fall back to seed data — Supabase not yet configured
-      });
+      .catch(() => {});
 
     fetch("/api/signatories")
       .then((r) => r.json())
@@ -60,18 +59,16 @@ export default function Home() {
   }
 
   return (
-    <SmoothScroll>
-      <StickyNav />
-      <main>
+    <>
+      <Welcome onComplete={handleWelcomeComplete} />
+      <Nav visible={entered} />
+      <main data-entered={entered}>
         <Hero />
-        <Marquee
-          items={[
-            "A living document",
-            "Written in Philadelphia",
-            "On the occasion of America's 250th year",
-            "Open to every voice",
-          ]}
-        />
+        <div aria-hidden="true">
+          <div className="h-1.5 bg-[var(--color-red)]" />
+          <div className="h-1.5 bg-[var(--color-cream)]" />
+          <div className="h-1.5 bg-[var(--color-blue)]" />
+        </div>
         <Intro />
         <Statement />
         <Document />
@@ -83,6 +80,6 @@ export default function Home() {
         <ClosingCTA />
         <Footer />
       </main>
-    </SmoothScroll>
+    </>
   );
 }

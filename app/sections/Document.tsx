@@ -2,17 +2,17 @@ import ScrollReveal from "../components/ScrollReveal";
 
 function DocSectionNum({ children }: { children: string }) {
   return (
-    <div className="flex items-center gap-3 text-[10px] font-semibold tracking-[0.3em] uppercase text-[var(--color-volt)] mb-4">
+    <div className="font-display flex items-center gap-3 text-[11px] tracking-[0.3em] uppercase text-[var(--color-red)] mb-4">
       {children}
-      <span className="flex-1 h-px bg-[var(--color-hairline)]" />
+      <span className="flex-1 h-[3px] bg-[var(--color-rule-light)]" />
     </div>
   );
 }
 
 function PullQuote({ children }: { children: string }) {
   return (
-    <blockquote className="border-l-2 border-[var(--color-volt)] pl-7 my-10">
-      <p className="font-serif text-[22px] italic leading-[1.6] text-[var(--color-off-white)]">
+    <blockquote className="border-l-[6px] border-[var(--color-red)] pl-7 my-10">
+      <p className="font-display text-[19px] leading-[1.5] text-[var(--color-blue)]">
         {children}
       </p>
     </blockquote>
@@ -21,7 +21,7 @@ function PullQuote({ children }: { children: string }) {
 
 function DocP({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-serif text-[18px] leading-[1.8] text-[var(--color-off-white)]/80 mb-5">
+    <p className="text-[17px] leading-[1.8] text-[var(--color-ink)] mb-5">
       {children}
     </p>
   );
@@ -29,26 +29,26 @@ function DocP({ children }: { children: React.ReactNode }) {
 
 export default function Document() {
   return (
-    <section id="document">
+    <section id="document" className="bg-[var(--color-paper)]">
       {/* Document header */}
       <div className="px-12 max-md:px-6">
-        <ScrollReveal className="max-w-[800px] mx-auto pt-24 pb-16 border-b border-[var(--color-hairline)] text-center">
-          <p className="text-[10px] font-semibold tracking-[0.25em] uppercase text-[var(--color-volt)] mb-5">
+        <ScrollReveal className="max-w-[800px] mx-auto pt-24 pb-16 border-b-[3px] border-[var(--color-blue)] text-center">
+          <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[var(--color-red)] mb-5">
             Philadelphia · May 2026 · Version 1.0
           </p>
-          <div className="inline-flex items-center gap-1.5 bg-[var(--color-volt)]/10 border border-[var(--color-volt)]/25 text-[var(--color-volt)] text-[10px] font-semibold tracking-[0.2em] uppercase px-3.5 py-1.5 rounded-full mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-volt)] animate-pulse-dot" />
+          <div className="font-display inline-flex items-center gap-1.5 border-[3px] border-[var(--color-red)] text-[var(--color-red)] text-[10px] tracking-[0.2em] uppercase px-3.5 py-1.5 mb-8">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)] animate-pulse-dot" />
             Living Document
           </div>
           <h2
-            className="font-serif leading-[1.0] tracking-[-0.025em] text-[var(--color-off-white)] mb-6"
-            style={{ fontSize: "clamp(36px, 5vw, 72px)" }}
+            className="font-display leading-[1.0] text-[var(--color-blue)] mb-6"
+            style={{ fontSize: "clamp(32px, 4.6vw, 64px)" }}
           >
             A Declaration of
             <br />
-            <em className="text-[var(--color-volt)]">Intentional Design</em>
+            <span className="text-[var(--color-red)]">Intentional Design</span>
           </h2>
-          <p className="text-[12px] font-medium tracking-[0.12em] uppercase text-[var(--color-mute)]">
+          <p className="font-display text-[11px] tracking-[0.12em] uppercase text-[var(--color-mute)]">
             Written in Philadelphia · On the occasion of America&apos;s 250th year
           </p>
         </ScrollReveal>
@@ -61,8 +61,8 @@ export default function Document() {
           <div>
             <DocSectionNum>Preamble</DocSectionNum>
             <h3
-              className="font-serif leading-[1.1] tracking-[-0.02em] text-[var(--color-off-white)] mb-6"
-              style={{ fontSize: "clamp(26px, 3vw, 40px)" }}
+              className="font-display leading-[1.1] text-[var(--color-blue)] mb-6"
+              style={{ fontSize: "clamp(24px, 2.8vw, 36px)" }}
             >
               We have been here before.
             </h3>
@@ -85,14 +85,14 @@ export default function Document() {
           <div>
             <DocSectionNum>Section I</DocSectionNum>
             <h3
-              className="font-serif leading-[1.1] tracking-[-0.02em] text-[var(--color-off-white)] mb-6"
-              style={{ fontSize: "clamp(26px, 3vw, 40px)" }}
+              className="font-display leading-[1.1] text-[var(--color-blue)] mb-6"
+              style={{ fontSize: "clamp(24px, 2.8vw, 36px)" }}
             >
-              On the <em className="text-[var(--color-volt)]">nature of tools</em>
+              On the <span className="text-[var(--color-red)]">nature of tools</span>
             </h3>
             <DocP>
               Artificial intelligence is a tool. So is language. So is architecture. So is law. So is music.{" "}
-              <strong className="text-[var(--color-off-white)] font-normal">
+              <strong className="text-[var(--color-blue)] font-semibold">
                 Tools do not have values — but the systems we build with them do.
               </strong>{" "}
               The systems reflect the values, intentions, and blind spots of those who designed them.
@@ -110,16 +110,16 @@ export default function Document() {
           <div>
             <DocSectionNum>Section II</DocSectionNum>
             <h3
-              className="font-serif leading-[1.1] tracking-[-0.02em] text-[var(--color-off-white)] mb-6"
-              style={{ fontSize: "clamp(26px, 3vw, 40px)" }}
+              className="font-display leading-[1.1] text-[var(--color-blue)] mb-6"
+              style={{ fontSize: "clamp(24px, 2.8vw, 36px)" }}
             >
-              On the <em className="text-[var(--color-volt)]">problems worth solving</em>
+              On the <span className="text-[var(--color-red)]">problems worth solving</span>
             </h3>
             <DocP>
               We do not lack for problems. We lack for systems that take them seriously. The challenges at the core of American life — inequality, access, health, belonging, trust, participation — are not mysteries. They are the result of systems that were designed, explicitly or implicitly, to produce the outcomes they produce.
             </DocP>
             <DocP>
-              <strong className="text-[var(--color-off-white)] font-normal">
+              <strong className="text-[var(--color-blue)] font-semibold">
                 If we design new systems with the same values that built the old ones, we will get faster versions of the same results.
               </strong>{" "}
               The power of this moment is that we are not patching — we are rebuilding. The question is what we are rebuilding toward.
@@ -137,10 +137,10 @@ export default function Document() {
           <div>
             <DocSectionNum>Section III</DocSectionNum>
             <h3
-              className="font-serif leading-[1.1] tracking-[-0.02em] text-[var(--color-off-white)] mb-6"
-              style={{ fontSize: "clamp(26px, 3vw, 40px)" }}
+              className="font-display leading-[1.1] text-[var(--color-blue)] mb-6"
+              style={{ fontSize: "clamp(24px, 2.8vw, 36px)" }}
             >
-              On <em className="text-[var(--color-volt)]">integration</em>, not replacement
+              On <span className="text-[var(--color-red)]">integration</span>, not replacement
             </h3>
             <DocP>
               There is a fear, understandable and worth taking seriously, that artificial intelligence will replace human creativity, human judgment, human connection. We take a different view — not because we are naive, but because we believe the frame of replacement is itself the problem.
@@ -149,7 +149,7 @@ export default function Document() {
               Hammers did not replace hands. They extended what hands could build. Writing did not replace memory. It extended what memory could hold. AI will not replace human culture. But culture that does not deliberately integrate AI will be outpaced by culture that does — often in ways that serve narrow interests rather than broad ones.
             </DocP>
             <DocP>
-              <strong className="text-[var(--color-off-white)] font-normal">
+              <strong className="text-[var(--color-blue)] font-semibold">
                 Integration, done with intention, means each amplifies the other&apos;s best qualities.
               </strong>{" "}
               AI can process at scales no human can. Culture can generate meaning in ways no algorithm can. Together, they can tackle the problems that neither can address alone.

@@ -10,17 +10,17 @@ export default function SignatoryWall({ signatories }: Props) {
   return (
     <section
       id="signatories"
-      className="border-t border-[var(--color-hairline)] py-24 px-12 max-w-[1200px] mx-auto max-md:px-6"
+      className="py-24 px-12 max-w-[1200px] mx-auto max-md:px-6"
     >
       {/* Header */}
       <div className="flex flex-wrap items-baseline gap-4 mb-16">
         <h2
-          className="font-serif tracking-[-0.02em] text-[var(--color-off-white)]"
-          style={{ fontSize: "clamp(28px, 3.5vw, 48px)" }}
+          className="font-display text-[var(--color-blue)]"
+          style={{ fontSize: "clamp(26px, 3.2vw, 44px)" }}
         >
           Signatories
         </h2>
-        <span className="text-[12px] font-medium text-[var(--color-volt)] tracking-[0.1em] bg-[var(--color-volt)]/10 border border-[var(--color-volt)]/20 px-3 py-1 rounded-full">
+        <span className="font-display text-[11px] text-[var(--color-cream)] tracking-[0.1em] bg-[var(--color-red)] px-3 py-1">
           {signatories.length.toLocaleString()} signed
         </span>
       </div>
@@ -38,11 +38,11 @@ export default function SignatoryWall({ signatories }: Props) {
               animation: s.id.startsWith("sig-") ? "riseIn 0.6s ease forwards" : "none",
             }}
           >
-            <p className="font-serif text-[17px] text-[var(--color-off-white)] leading-tight">
+            <p className="text-[16px] font-semibold text-[var(--color-blue)] leading-tight">
               {s.name}
             </p>
             {s.context && (
-              <p className="text-[11px] text-[var(--color-mute)] mt-0.5 font-light">
+              <p className="text-[11px] text-[var(--color-mute)] mt-0.5">
                 {s.context}
               </p>
             )}
@@ -52,11 +52,11 @@ export default function SignatoryWall({ signatories }: Props) {
 
       {/* Decorative rule */}
       <div className="mt-16 flex items-center gap-6">
-        <div className="flex-1 h-px bg-[var(--color-hairline)]" />
-        <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-mute)]">
-          Philadelphia · {new Date().getFullYear()}
+        <div className="flex-1 h-[3px] bg-[var(--color-red)]" />
+        <p className="font-display text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)]">
+          ★ Philadelphia · {new Date().getFullYear()} ★
         </p>
-        <div className="flex-1 h-px bg-[var(--color-hairline)]" />
+        <div className="flex-1 h-[3px] bg-[var(--color-blue)]" />
       </div>
     </section>
   );
