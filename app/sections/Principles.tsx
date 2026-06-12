@@ -1,4 +1,8 @@
+"use client";
+
+import { motion } from "motion/react";
 import ScrollReveal from "../components/ScrollReveal";
+import TiltCard from "../components/TiltCard";
 import { PRINCIPLES } from "../../lib/data";
 
 export default function Principles() {
@@ -24,24 +28,38 @@ export default function Principles() {
         </ScrollReveal>
 
         {/* Grid */}
-        <div className="grid grid-cols-3 gap-0.5 max-md:grid-cols-1">
-          {PRINCIPLES.map((p, i) => (
-            <ScrollReveal key={p.num} delay={i * 60}>
-              <div className="bg-[var(--color-ash)] p-10 group hover:bg-[var(--color-volt)]/[0.06] transition-colors duration-300 h-full">
-                <p className="text-[9px] font-semibold tracking-[0.3em] text-[var(--color-volt)] uppercase mb-5">
-                  {p.num}
-                </p>
-                <div className="w-6 h-0.5 bg-[var(--color-volt)] mb-5" />
-                <h3 className="font-serif text-[22px] leading-[1.2] tracking-[-0.01em] text-[var(--color-off-white)] mb-3.5">
-                  {p.title}
-                </h3>
-                <p className="text-[13px] font-light leading-[1.75] text-[var(--color-mute)]">
-                  {p.body}
-                </p>
-              </div>
-            </ScrollReveal>
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "0px 0px -15% 0px" }}
+          transition={{ staggerChildren: 0.08 }}
+          className="grid grid-cols-3 gap-0.5 max-md:grid-cols-1"
+        >
+          {PRINCIPLES.map((p) => (
+            <motion.div
+              key={p.num}
+              variants={{
+                hidden: { opacity: 0, y: 36 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] } },
+              }}
+            >
+              <TiltCard className="h-full">
+                <div className="bg-[var(--color-ash)] p-10 h-full transition-colors duration-300 hover:bg-[#41413e]">
+                  <p className="text-[9px] font-semibold tracking-[0.3em] text-[var(--color-volt)] uppercase mb-5">
+                    {p.num}
+                  </p>
+                  <div className="w-6 h-0.5 bg-[var(--color-volt)] mb-5 transition-all duration-500 group-hover:w-12" />
+                  <h3 className="font-serif text-[22px] leading-[1.2] tracking-[-0.01em] text-[var(--color-off-white)] mb-3.5">
+                    {p.title}
+                  </h3>
+                  <p className="text-[13px] font-light leading-[1.75] text-[var(--color-mute)]">
+                    {p.body}
+                  </p>
+                </div>
+              </TiltCard>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
