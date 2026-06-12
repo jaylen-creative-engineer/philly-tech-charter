@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Welcome from "./components/Welcome";
 import Hero from "./sections/Hero";
 import Intro from "./sections/Intro";
 import Statement from "./sections/Statement";
@@ -17,6 +18,9 @@ import { SEED_CONTRIBUTIONS } from "../lib/data";
 export default function Home() {
   const [contributions, setContributions] = useState<Contribution[]>(SEED_CONTRIBUTIONS);
   const [signatories, setSignatories] = useState<Signatory[]>([]);
+  const [entered, setEntered] = useState(false);
+
+  const handleWelcomeComplete = useCallback(() => setEntered(true), []);
 
   // Fetch persisted data on mount
   useEffect(() => {
@@ -56,9 +60,16 @@ export default function Home() {
   }
 
   return (
-    <main>
+    <>
+    <Welcome onComplete={handleWelcomeComplete} />
+    <main data-entered={entered}>
       <Hero />
-      <div className="h-px bg-[var(--color-hairline)]" />
+      {/* Tri-color poster stripe */}
+      <div aria-hidden="true">
+        <div className="h-1.5 bg-[var(--color-red)]" />
+        <div className="h-1.5 bg-[var(--color-cream)]" />
+        <div className="h-1.5 bg-[var(--color-blue)]" />
+      </div>
       <Intro />
       <Statement />
       <Document />
@@ -69,5 +80,6 @@ export default function Home() {
       <SignatoryWall signatories={signatories} />
       <Footer />
     </main>
+    </>
   );
 }

@@ -74,7 +74,10 @@ export default function Contribute({ onSubmit }: Props) {
   }
 
   const inputBase =
-    "w-full bg-transparent border-0 border-b border-[var(--color-hairline)] text-[var(--color-off-white)] font-sans text-[15px] font-light py-3 outline-none transition-colors duration-200 focus:border-[var(--color-volt)] mb-8 placeholder:text-[var(--color-mute)]";
+    "w-full bg-transparent border-0 border-b-2 border-[var(--color-rule-light)] text-[var(--color-ink)] font-sans text-[15px] py-3 outline-none transition-colors duration-200 focus:border-[var(--color-red)] mb-8 placeholder:text-[var(--color-mute)]";
+
+  const labelBase =
+    "font-display block text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)] mb-2";
 
   return (
     <section id="contribute" className="py-[120px] px-12 max-w-[900px] mx-auto text-center max-md:px-6">
@@ -84,38 +87,38 @@ export default function Contribute({ onSubmit }: Props) {
 
       <ScrollReveal delay={80}>
         <h2
-          className="font-serif leading-[1.05] tracking-[-0.025em] text-[var(--color-off-white)] mb-6"
-          style={{ fontSize: "clamp(36px, 5vw, 64px)" }}
+          className="font-display leading-[1.05] text-[var(--color-blue)] mb-6"
+          style={{ fontSize: "clamp(32px, 4.6vw, 58px)" }}
         >
           This document
           <br />
-          <em className="text-[var(--color-volt)]">belongs to everyone</em>
+          <span className="text-[var(--color-red)]">belongs to everyone</span>
           <br />
           who signs it.
         </h2>
       </ScrollReveal>
 
       <ScrollReveal delay={120}>
-        <p className="text-[16px] font-light leading-[1.8] text-[var(--color-mute)] max-w-[560px] mx-auto mb-12">
+        <p className="text-[16px] leading-[1.8] text-[var(--color-ink)] max-w-[560px] mx-auto mb-12">
           Submit a perspective, a principle, a challenge, or a refinement. Public contributions are reviewed and incorporated into future versions. Your name and context will be credited in the changelog.
         </p>
       </ScrollReveal>
 
       <ScrollReveal delay={160}>
-        <div className="bg-white/[0.03] border border-[var(--color-hairline)] rounded-sm p-12 text-left max-w-[640px] mx-auto max-md:p-6">
+        <div className="bg-[var(--color-paper)] border-[3px] border-[var(--color-blue)] p-12 text-left max-w-[640px] mx-auto max-md:p-6">
           {submitted && (
-            <div className="mb-6 bg-[var(--color-volt)]/10 border border-[var(--color-volt)]/25 text-[var(--color-volt)] text-[13px] font-medium px-4 py-3 rounded-sm">
+            <div className="mb-6 bg-[var(--color-blue)] text-[var(--color-cream)] text-[13px] font-medium px-4 py-3">
               Thank you — your voice has been added to the document.
             </div>
           )}
 
           {error && (
-            <div className="mb-6 bg-red-500/10 border border-red-500/25 text-red-400 text-[13px] px-4 py-3 rounded-sm">
+            <div className="mb-6 bg-[var(--color-red)] text-[var(--color-cream)] text-[13px] px-4 py-3">
               {error}
             </div>
           )}
 
-          <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
+          <label className={labelBase}>
             Your Name
           </label>
           <input
@@ -126,7 +129,7 @@ export default function Contribute({ onSubmit }: Props) {
             onChange={(e) => setName(e.target.value)}
           />
 
-          <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
+          <label className={labelBase}>
             Your Context
           </label>
           <input
@@ -137,7 +140,7 @@ export default function Contribute({ onSubmit }: Props) {
             onChange={(e) => setContext(e.target.value)}
           />
 
-          <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
+          <label className={labelBase}>
             Type of Contribution
           </label>
           <select
@@ -146,15 +149,15 @@ export default function Contribute({ onSubmit }: Props) {
             onChange={(e) => setType(e.target.value as ContributionType)}
             style={{ background: "transparent" }}
           >
-            <option value="" disabled style={{ background: "#3a3a38" }}>Select one</option>
+            <option value="" disabled>Select one</option>
             {CONTRIBUTION_TYPES.map((t) => (
-              <option key={t} value={t} style={{ background: "#3a3a38" }}>{t}</option>
+              <option key={t} value={t}>{t}</option>
             ))}
           </select>
 
           {isNewPrinciple && (
             <div style={{ animation: "riseIn 0.35s ease forwards" }}>
-              <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
+              <label className={labelBase}>
                 Principle Title
               </label>
               <input
@@ -167,11 +170,11 @@ export default function Contribute({ onSubmit }: Props) {
             </div>
           )}
 
-          <label className="block text-[10px] font-semibold tracking-[0.2em] uppercase text-[var(--color-volt)] mb-2">
+          <label className={labelBase}>
             {isNewPrinciple ? "Principle Body" : "Your Contribution"}
           </label>
           <textarea
-            className="w-full bg-transparent border border-[var(--color-hairline)] text-[var(--color-off-white)] font-sans text-[15px] font-light p-4 outline-none transition-colors duration-200 focus:border-[var(--color-volt)]/40 mb-2 rounded-sm resize-y min-h-[120px] placeholder:text-[var(--color-mute)]"
+            className="w-full bg-transparent border-2 border-[var(--color-rule-light)] text-[var(--color-ink)] font-sans text-[15px] p-4 outline-none transition-colors duration-200 focus:border-[var(--color-red)] mb-2 resize-y min-h-[120px] placeholder:text-[var(--color-mute)]"
             placeholder={
               isNewPrinciple
                 ? "Describe the principle in 1–3 sentences. What should we commit to, and why does it matter?"
@@ -185,7 +188,7 @@ export default function Contribute({ onSubmit }: Props) {
           </p>
 
           <Pill
-            variant="volt"
+            variant="red"
             onClick={handleSubmit}
             className="w-full justify-center text-[14px]"
           >

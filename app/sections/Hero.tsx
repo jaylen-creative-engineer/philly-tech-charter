@@ -1,59 +1,68 @@
 import Pill from "../components/Pill";
+import IndependenceHall from "../components/IndependenceHall";
+import FlagWaves from "../components/FlagWaves";
 
 export default function Hero() {
   return (
     <>
-    {/* Opening statement — the first thing a reader sees */}
-    <div className="w-full border-b border-[var(--color-hairline)] px-12 py-5 flex items-center justify-center max-md:px-6">
-      <p className="animate-rise-1 font-serif italic text-[var(--color-off-white)] text-center tracking-wide"
-        style={{ fontSize: "clamp(15px, 1.6vw, 20px)" }}>
-        We Are Living Through History.
-      </p>
-    </div>
-
-    <section className="relative min-h-screen flex flex-col justify-end px-12 pb-16 overflow-hidden">
-      {/* Ghost 250 */}
-      <div
-        aria-hidden="true"
-        className="animate-fade-slow absolute top-0 left-0 right-0 font-serif leading-[0.82] tracking-[-0.02em] px-10 pt-2 pointer-events-none select-none"
-        style={{
-          fontSize: "clamp(180px, 28vw, 380px)",
-          color: "transparent",
-          WebkitTextStroke: "1px rgba(200, 241, 53, 0.12)",
-        }}
-      >
-        250
+      {/* Opening bar — wordmark lockup on the cream field, like the poster's airline lockup */}
+      <div className="w-full bg-[var(--color-cream)] px-10 py-4 flex items-center justify-between gap-6 max-md:px-6">
+        <p className="animate-rise-1 font-display leading-[1.05] text-[clamp(16px,1.8vw,22px)]">
+          <span className="text-[var(--color-red)]">Philly Tech</span>
+          <br />
+          <span className="text-[var(--color-blue)]">Charter</span>
+        </p>
+        <p className="animate-rise-1 font-display uppercase text-[var(--color-blue)] text-center tracking-[0.18em] text-[12px] max-md:text-[10px]">
+          ★ We Are Living Through History ★
+        </p>
+        <p className="animate-rise-1 font-display uppercase text-[var(--color-red)] tracking-[0.14em] text-[11px] text-right max-md:hidden">
+          Est. 1776
+          <br />
+          <span className="text-[var(--color-blue)]">Renewed 2026</span>
+        </p>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="animate-rise-5 absolute bottom-16 right-12 flex flex-col items-center gap-2 text-[9px] tracking-[0.2em] uppercase text-[var(--color-mute)]">
-        <div className="animate-scroll-pulse w-px h-12 bg-gradient-to-b from-[var(--color-volt)] to-transparent" />
-        Scroll
-      </div>
+      <section className="relative bg-[var(--color-blue)] text-[var(--color-cream)] overflow-hidden flex flex-col min-h-screen">
+        {/* Flag waves sweeping across the top */}
+        <div className="animate-fade-slow relative w-full" aria-hidden="true">
+          <FlagWaves className="block w-full h-[26vh] min-h-[160px]" />
+        </div>
 
-      {/* Content */}
-      <p className="animate-rise-1 text-[11px] font-medium tracking-[0.22em] uppercase text-[var(--color-volt)] mb-8">
-        Philadelphia · 2026 · A Living Document
-      </p>
+        {/* Independence Hall centerpiece */}
+        <div className="animate-rise-2 flex-1 flex items-end justify-center pt-10">
+          <IndependenceHall className="h-[44vh] min-h-[280px] w-auto" />
+        </div>
 
-      <h1
-        className="animate-rise-2 font-serif leading-[0.95] tracking-[-0.02em] text-[var(--color-off-white)] max-w-4xl"
-        style={{ fontSize: "clamp(44px, 7vw, 96px)" }}
-      >
-        A gift to America.
-        <br />
-        <em className="text-[var(--color-volt)]">A design for what comes next.</em>
-      </h1>
+        {/* Giant wordmark — the poster's "Philadelphia" */}
+        <div className="px-6 text-center">
+          <p className="animate-rise-3 font-display text-[var(--color-gold)] uppercase tracking-[0.3em] text-[11px] mt-10 mb-2">
+            2026 · America&apos;s 250th Year · A Living Document
+          </p>
+          <h1
+            className="animate-rise-3 font-display leading-[0.95] tracking-[-0.01em] text-[var(--color-cream)]"
+            style={{ fontSize: "clamp(52px, 11vw, 150px)" }}
+          >
+            Philadelphia
+          </h1>
+          <p className="animate-rise-4 mx-auto mt-5 max-w-xl text-[15px] leading-[1.7] text-[var(--color-cream)]/85">
+            Two hundred fifty years ago, people sat in this city and wrote down
+            their intentions for a new world. It is time to do it again — a gift
+            to America, and a design for what comes next.
+          </p>
+        </div>
 
-      <p className="animate-rise-3 mt-8 text-[15px] font-light text-[var(--color-mute)] max-w-lg leading-[1.7]">
-        Two hundred fifty years ago, a group of people sat in this city and wrote down their intentions for a new world. We believe it is time to do it again — not as a law, but as a shared commitment to how we move forward together.
-      </p>
+        {/* Calls to action */}
+        <div className="animate-rise-4 flex items-center justify-center gap-4 mt-10 mb-16 max-md:flex-col">
+          <Pill variant="red" href="#document">Read the Document</Pill>
+          <Pill variant="cream" href="#contribute">Add Your Voice</Pill>
+        </div>
 
-      <div className="animate-rise-4 mt-12 flex items-center gap-6">
-        <Pill variant="volt" href="#document">Read the Document</Pill>
-        <Pill variant="outline" href="#contribute">Add Your Voice</Pill>
-      </div>
-    </section>
+        {/* Scroll indicator */}
+        <div className="animate-rise-5 absolute bottom-8 right-10 flex flex-col items-center gap-2 font-display text-[9px] tracking-[0.2em] uppercase text-[var(--color-cream)]/70 max-md:hidden">
+          <div className="animate-scroll-pulse w-[3px] h-12 bg-[var(--color-red)]" />
+          Scroll
+        </div>
+      </section>
     </>
   );
 }
