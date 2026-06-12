@@ -6,107 +6,92 @@ interface Props {
   className?: string;
 }
 
-/** Ten y-coordinates for the four cubic segments of one wave edge (left → right). */
-type WaveY = [
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-  number,
-];
-
-interface Keyframe {
-  boundaries: [WaveY, WaveY, WaveY, WaveY];
+/** One point on a band boundary, with the cloth's slope (dy/dx) at that point. */
+interface Sample {
+  x: number;
+  y: number;
+  slope: number;
 }
-
-const KEYFRAMES: Keyframe[] = [
-  {
-    boundaries: [
-      [18, 0, 48, 24, 4, 40, 18, 12, 22, 18],
-      [78, 58, 108, 84, 64, 100, 78, 72, 82, 78],
-      [138, 118, 168, 144, 124, 160, 138, 132, 142, 138],
-      [196, 178, 208, 192, 172, 198, 188, 184, 192, 188],
-    ],
-  },
-  {
-    boundaries: [
-      [30, 14, 34, 40, 22, 56, 36, 30, 40, 38],
-      [90, 74, 94, 100, 82, 116, 96, 92, 100, 98],
-      [150, 134, 154, 160, 142, 176, 156, 152, 160, 158],
-      [208, 190, 220, 204, 184, 210, 200, 196, 204, 200],
-    ],
-  },
-  {
-    boundaries: [
-      [22, 4, 44, 30, 8, 46, 24, 16, 26, 22],
-      [82, 62, 102, 88, 68, 104, 84, 76, 86, 82],
-      [142, 122, 162, 148, 128, 164, 144, 136, 146, 142],
-      [200, 182, 212, 196, 176, 202, 192, 188, 196, 192],
-    ],
-  },
-];
 
 const COLORS = ["var(--color-red)", "var(--color-cream)", "var(--color-red)"] as const;
-const MORPH_MS = 5200;
 const SWAY_MS = 9000;
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
+const FLAG_LEFT = -120;
+const FLAG_RIGHT = 1560;
+const FLAG_WIDTH = FLAG_RIGHT - FLAG_LEFT;
+const SAMPLE_STEP = 120;
+
+/** Resting y for each of the four band boundaries. */
+const BASE_YS = [22, 80, 138, 196] as const;
+
+/**
+ * Vertical displacement of the cloth at horizontal position x and time t.
+ *
+ * Models a flag pinned at the hoist (left): a traveling wave moves left → right
+ * (phase k·x − ω·t) and its amplitude grows toward the free fly end, which is
+ * what produces the S-curve silhouette of a flag in wind. `lag` lets each band
+ * boundary trail the one above it slightly, like thickness in real cloth.
+ */
+function flagWave(x: number, tSec: number, lag: number): number {
+  const u = (x - FLAG_LEFT) / FLAG_WIDTH; // 0 at hoist, 1 at fly end
+  const envelope = 0.25 + 0.75 * u;
+
+  // ~1 wavelength across the flag → a single clean S at any instant
+  const primary = Math.sin(x / 240 - tSec * 1.5 - lag) * 21;
+  // longer, slower swell layered on top for organic variation
+  const secondary = Math.sin(x / 130 - tSec * 2.2 - lag * 1.5) * 5;
+
+  return (primary + secondary) * envelope;
 }
 
-function easeInOutSine(t: number) {
-  return -(Math.cos(Math.PI * t) - 1) / 2;
+/**
+ * Sample one boundary line, recording the wave's slope at each point so the
+ * Bezier handles can follow the true tangent — this is what keeps every join
+ * rounded instead of kinking.
+ */
+function sampleBoundary(base: number, tSec: number, lag: number): Sample[] {
+  const samples: Sample[] = [];
+  for (let x = FLAG_LEFT; x <= FLAG_RIGHT; x += SAMPLE_STEP) {
+    samples.push({
+      x,
+      y: base + flagWave(x, tSec, lag),
+      slope: (flagWave(x + 1, tSec, lag) - flagWave(x - 1, tSec, lag)) / 2,
+    });
+  }
+  return samples;
 }
 
-/** Loop through keyframes with smooth easing between each pair. */
-function morphBoundaries(elapsed: number, duration: number): Keyframe["boundaries"] {
-  const count = KEYFRAMES.length;
-  const segment = duration / count;
-  const raw = (elapsed % duration) / segment;
-  const index = Math.floor(raw) % count;
-  const next = (index + 1) % count;
-  const localT = easeInOutSine(raw - index);
+/**
+ * Closed band between two boundaries. Each cubic segment's handles sit on the
+ * tangent line of the sampled wave, so adjacent segments always share a
+ * tangent at the join (C1 continuity) — no sharp corners at any frame.
+ */
+function bandPath(top: Sample[], bottom: Sample[]): string {
+  const h = SAMPLE_STEP / 3;
+  let d = `M${top[0].x},${top[0].y}`;
 
-  const from = KEYFRAMES[index].boundaries;
-  const to = KEYFRAMES[next].boundaries;
-  return from.map((wave, i) =>
-    wave.map((v, j) => lerp(v, to[i][j], localT))
-  ) as Keyframe["boundaries"];
+  for (let i = 0; i < top.length - 1; i++) {
+    const a = top[i];
+    const b = top[i + 1];
+    d += ` C${a.x + h},${a.y + a.slope * h} ${b.x - h},${b.y - b.slope * h} ${b.x},${b.y}`;
+  }
+
+  const last = bottom[bottom.length - 1];
+  d += ` L${last.x},${last.y}`;
+
+  for (let i = bottom.length - 1; i > 0; i--) {
+    const a = bottom[i];
+    const b = bottom[i - 1];
+    d += ` C${a.x - h},${a.y - a.slope * h} ${b.x + h},${b.y + b.slope * h} ${b.x},${b.y}`;
+  }
+
+  return d + " Z";
 }
 
-/** Continuous ripple that travels left → right across the whole flag stack. */
-function applyTravelingRipple(
-  boundaries: Keyframe["boundaries"],
-  elapsed: number
-): Keyframe["boundaries"] {
+function computeBandPaths(elapsed: number): string[] {
   const t = elapsed * 0.001;
-  return boundaries.map((wave) =>
-    wave.map((y, i) => {
-      const phase = i * 0.62;
-      const primary = Math.sin(t * 2.4 + phase) * 5.5;
-      const secondary = Math.sin(t * 3.7 + phase * 1.35) * 3;
-      const tertiary = Math.sin(t * 1.3 + phase * 0.45) * 2;
-      return y + primary + secondary + tertiary;
-    })
-  ) as Keyframe["boundaries"];
-}
-
-function bandPath(top: WaveY, bottom: WaveY): string {
-  return (
-    `M-120,${top[0]} C180,${top[1]} 420,${top[2]} 660,${top[3]} ` +
-    `C900,${top[4]} 1140,${top[5]} 1380,${top[6]} C1460,${top[7]} 1520,${top[8]} 1560,${top[9]} ` +
-    `L1560,${bottom[9]} C1520,${bottom[8]} 1460,${bottom[7]} 1380,${bottom[6]} ` +
-    `C1140,${bottom[5]} 900,${bottom[4]} 660,${bottom[3]} C420,${bottom[2]} 180,${bottom[1]} -120,${bottom[0]} Z`
-  );
-}
-
-function pathsFromBoundaries(b: [WaveY, WaveY, WaveY, WaveY]): string[] {
-  return [bandPath(b[0], b[1]), bandPath(b[1], b[2]), bandPath(b[2], b[3])];
+  const boundaries = BASE_YS.map((base, band) => sampleBoundary(base, t, band * 0.3));
+  return [0, 1, 2].map((i) => bandPath(boundaries[i], boundaries[i + 1]));
 }
 
 function buildTransform(elapsed: number): string {
@@ -122,9 +107,7 @@ function buildTransform(elapsed: number): string {
 }
 
 export default function FlagWaves({ className = "" }: Props) {
-  const [paths, setPaths] = useState(() =>
-    pathsFromBoundaries(KEYFRAMES[0].boundaries)
-  );
+  const [paths, setPaths] = useState(() => computeBandPaths(0));
   const [transform, setTransform] = useState("translate(0 0)");
   const [animate, setAnimate] = useState(true);
   const rafRef = useRef<number>(0);
@@ -140,7 +123,7 @@ export default function FlagWaves({ className = "" }: Props) {
 
   useEffect(() => {
     if (!animate) {
-      setPaths(pathsFromBoundaries(KEYFRAMES[0].boundaries));
+      setPaths(computeBandPaths(0));
       setTransform("translate(0 0)");
       startRef.current = null;
       return;
@@ -150,9 +133,7 @@ export default function FlagWaves({ className = "" }: Props) {
       if (startRef.current === null) startRef.current = now;
       const elapsed = now - startRef.current;
 
-      const morphed = morphBoundaries(elapsed, MORPH_MS);
-      const boundaries = applyTravelingRipple(morphed, elapsed);
-      setPaths(pathsFromBoundaries(boundaries));
+      setPaths(computeBandPaths(elapsed));
       setTransform(buildTransform(elapsed));
 
       rafRef.current = requestAnimationFrame(tick);
