@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BlueTexture from "../components/BlueTexture";
 import Pill from "../components/Pill";
 import SectionLabel from "../components/SectionLabel";
@@ -86,8 +86,120 @@ interface SuccessState {
   hrefLabel: string;
 }
 
+interface ConsoleStateInput {
+  kind: ContributionKind | "";
+  name: string;
+  context: string;
+  principleTitle: string;
+  text: string;
+}
+
 function getKindLabel(kind: ContributionKind | "") {
   return KIND_OPTIONS.find((option) => option.kind === kind)?.label ?? "Choose a path";
+}
+
+function getConsoleText({ kind, name, context, principleTitle, text }: ConsoleStateInput) {
+  if (!kind) {
+    return "Awaiting your first answer. Choose signature, principle, or another contribution path.";
+  }
+
+  if (kind === "signature") {
+    if (!name.trim()) {
+      return "Signature path open. Type the name the charter should carry forward.";
+    }
+
+    if (!context.trim()) {
+      return "Name received. Add optional city or role context, or submit the signature.";
+    }
+
+    return "Signature card is ready. Review the preview, then add your name to the record.";
+  }
+
+  if (kind === "principle") {
+    if (!principleTitle.trim()) {
+      return "Principle path open. Start with a short, memorable title.";
+    }
+
+    if (!text.trim()) {
+      return "Title received. Now write the principle body in one to three sentences.";
+    }
+
+    return "Principle draft is live. Review the card, then submit it for v1.1.";
+  }
+
+  if (!text.trim()) {
+    return "Contribution path open. Choose a type, then write the perspective this charter needs.";
+  }
+
+  return "Contribution draft is live. Review the card, then submit it to the public record.";
+}
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setPrefersReducedMotion(query.matches);
+
+    updatePreference();
+    query.addEventListener("change", updatePreference);
+    return () => query.removeEventListener("change", updatePreference);
+  }, []);
+
+  return prefersReducedMotion;
+}
+
+function TypewriterText({
+  text,
+  speed = 22,
+  startDelay = 0,
+  cursor = true,
+  reducedMotion,
+  className = "",
+}: {
+  text: string;
+  speed?: number;
+  startDelay?: number;
+  cursor?: boolean;
+  reducedMotion: boolean;
+  className?: string;
+}) {
+  const [visibleCharacters, setVisibleCharacters] = useState(reducedMotion ? text.length : 0);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      return;
+    }
+
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    const timeout = setTimeout(() => {
+      interval = setInterval(() => {
+        setVisibleCharacters((current) => {
+          if (current >= text.length) {
+            if (interval) clearInterval(interval);
+            return current;
+          }
+
+          return current + 1;
+        });
+      }, speed);
+    }, startDelay);
+
+    return () => {
+      clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+    };
+  }, [reducedMotion, speed, startDelay, text]);
+
+  const visibleText = reducedMotion ? text : text.slice(0, visibleCharacters);
+
+  return (
+    <span className={`typewriter-copy ${className}`} role="text" aria-label={text}>
+      <span aria-hidden="true">{visibleText}</span>
+      {cursor && !reducedMotion && <span className="typewriter-cursor" aria-hidden="true" />}
+    </span>
+  );
 }
 
 export default function ContributionExperience() {
@@ -108,6 +220,16 @@ export default function ContributionExperience() {
   const isSignature = kind === "signature";
   const contributionText = text.trim();
   const selectedOption = KIND_OPTIONS.find((option) => option.kind === kind);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const previewPrompt = selectedOption?.previewPrompt ?? "Once you choose a path, we will show the card it creates.";
+  const detailsPrompt = selectedOption?.detailsPrompt ?? "Tell us what should go on the card.";
+  const consoleText = getConsoleText({
+    kind,
+    name,
+    context,
+    principleTitle,
+    text,
+  });
 
   function handleKindSelect(nextKind: ContributionKind) {
     setKind(nextKind);
@@ -232,11 +354,20 @@ export default function ContributionExperience() {
             className="font-display mx-auto mb-5 max-w-4xl leading-[0.98] tracking-[-0.02em]"
             style={{ fontSize: "clamp(42px, 7vw, 92px)" }}
           >
-            Let&apos;s add your voice, one step at a time.
+            <TypewriterText
+              text="Let's add your voice, one step at a time."
+              speed={32}
+              reducedMotion={prefersReducedMotion}
+            />
           </h1>
           <p className="mx-auto max-w-2xl text-[16px] leading-[1.8] text-[var(--color-cream)]/80">
-            We&apos;ll begin with a simple question, shape the card together, and end with a clear
-            confirmation that your contribution has been received.
+            <TypewriterText
+              text="We'll begin with a simple question, shape the card together, and end with a clear confirmation that your contribution has been received."
+              speed={14}
+              startDelay={1400}
+              cursor={false}
+              reducedMotion={prefersReducedMotion}
+            />
           </p>
         </div>
 
@@ -263,12 +394,42 @@ export default function ContributionExperience() {
           </div>
         ) : (
           <div className="card-surface bg-[var(--color-cream)] p-6 text-[var(--color-ink)] shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-10">
+            <div className="contribution-console mb-10 p-4">
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <p className="font-display text-[9px] uppercase tracking-[0.24em] text-[var(--color-red)]">
+                  Live intake
+                </p>
+                <div className="flex items-center gap-1.5" aria-hidden="true">
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-red)]" />
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-gold)]" />
+                  <span className="h-2 w-2 rounded-full bg-[var(--color-blue)]" />
+                </div>
+              </div>
+              <p className="font-mono text-[13px] leading-[1.7] text-[var(--color-blue)]">
+                <span className="text-[var(--color-red)]" aria-hidden="true">
+                  &gt;{" "}
+                </span>
+                <TypewriterText
+                  key={consoleText}
+                  text={consoleText}
+                  speed={16}
+                  cursor
+                  reducedMotion={prefersReducedMotion}
+                />
+              </p>
+            </div>
+
             <div className="mb-10">
               <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
                 First question
               </p>
               <h2 className="font-display mb-4 text-[clamp(24px,3vw,38px)] leading-tight text-[var(--color-blue)]">
-                What would you like to contribute?
+                <TypewriterText
+                  text="What would you like to contribute?"
+                  speed={24}
+                  startDelay={300}
+                  reducedMotion={prefersReducedMotion}
+                />
               </h2>
               <p className="mb-6 max-w-2xl text-[14px] leading-[1.7] text-[var(--color-mute)]">
                 Pick the path that feels closest. The next prompt will adapt to what you choose.
@@ -301,7 +462,13 @@ export default function ContributionExperience() {
                 {kind ? "Next prompt" : "Waiting for your answer"}
               </p>
               <h2 className="font-display mb-4 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
-                {selectedOption?.previewPrompt ?? "Once you choose a path, we will show the card it creates."}
+                <TypewriterText
+                  key={previewPrompt}
+                  text={previewPrompt}
+                  speed={20}
+                  cursor={hasSelectedKind}
+                  reducedMotion={prefersReducedMotion}
+                />
               </h2>
               <div
                 className="preview-card p-7 transition-all duration-300"
@@ -326,7 +493,13 @@ export default function ContributionExperience() {
                 Final prompt
               </p>
               <h2 className="font-display mb-6 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
-                {selectedOption?.detailsPrompt ?? "Tell us what should go on the card."}
+                <TypewriterText
+                  key={detailsPrompt}
+                  text={detailsPrompt}
+                  speed={20}
+                  cursor={hasSelectedKind}
+                  reducedMotion={prefersReducedMotion}
+                />
               </h2>
 
               {error && (
