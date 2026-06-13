@@ -10,7 +10,6 @@ import Document from "./sections/Document";
 import Principles from "./sections/Principles";
 import Contribute from "./sections/Contribute";
 import Voices from "./sections/Voices";
-import Sign from "./sections/Sign";
 import SignatoryWall from "./sections/SignatoryWall";
 import ClosingCTA from "./sections/ClosingCTA";
 import Footer from "./sections/Footer";
@@ -44,20 +43,6 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  function handleContribution(c: Contribution) {
-    setContributions((prev) => [...prev, c]);
-    setTimeout(() => {
-      document.getElementById("voices")?.scrollIntoView({ behavior: "smooth" });
-    }, 400);
-  }
-
-  function handleSign(s: Signatory) {
-    setSignatories((prev) => [...prev, s]);
-    setTimeout(() => {
-      document.getElementById("signatories")?.scrollIntoView({ behavior: "smooth" });
-    }, 400);
-  }
-
   return (
     <>
       <Welcome onComplete={handleWelcomeComplete} />
@@ -73,9 +58,8 @@ export default function Home() {
         <Statement />
         <Document />
         <Principles />
-        <Contribute onSubmit={handleContribution} />
+        <Contribute />
         <Voices contributions={contributions} />
-        <Sign signatoryCount={signatories.length} onSign={handleSign} />
         <SignatoryWall signatories={signatories} />
         <ClosingCTA />
         <Footer />

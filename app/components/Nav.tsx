@@ -1,22 +1,24 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SECTIONS = [
   { id: "document", label: "Charter" },
   { id: "principles", label: "Principles" },
-  { id: "contribute", label: "Contribute" },
   { id: "voices", label: "Voices" },
-  { id: "sign", label: "Sign" },
 ] as const;
 
 interface Props {
   visible: boolean;
+  sectionHrefPrefix?: "#" | "/#";
 }
 
-export default function Nav({ visible }: Props) {
+export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
   const [active, setActive] = useState<string>("");
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!visible) return;
@@ -65,12 +67,14 @@ export default function Nav({ visible }: Props) {
       </div>
 
       <nav className="flex items-center justify-between px-6 py-3 max-md:px-4">
-        <a
-          href="#"
+        <Link
+          href="/"
           className="font-display text-[13px] leading-tight tracking-tight group"
           onClick={(e) => {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (window.location.pathname === "/") {
+              e.preventDefault();
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
           }}
         >
           <span className="text-[var(--color-red)] group-hover:text-[var(--color-red-deep)] transition-colors">
@@ -80,15 +84,15 @@ export default function Nav({ visible }: Props) {
             {" "}
             Charter
           </span>
-        </a>
+        </Link>
 
         <ul className="flex items-center gap-1 max-md:gap-0">
           {SECTIONS.map(({ id, label }) => (
             <li key={id}>
               <a
-                href={`#${id}`}
+                href={`${sectionHrefPrefix}${id}`}
                 className={`font-display text-[10px] uppercase tracking-[0.12em] px-3 py-2 transition-all duration-200 max-md:px-2 max-md:text-[9px] ${
-                  active === id
+                  active === id && pathname !== "/contribute"
                     ? "text-[var(--color-red)] bg-[var(--color-red)]/8"
                     : scrolled
                       ? "text-[var(--color-blue)] hover:text-[var(--color-red)]"
@@ -99,14 +103,28 @@ export default function Nav({ visible }: Props) {
               </a>
             </li>
           ))}
+          <li>
+            <Link
+              href="/contribute"
+              className={`font-display text-[10px] uppercase tracking-[0.12em] px-3 py-2 transition-all duration-200 max-md:px-2 max-md:text-[9px] ${
+                pathname === "/contribute"
+                  ? "text-[var(--color-red)] bg-[var(--color-red)]/8"
+                  : scrolled
+                    ? "text-[var(--color-blue)] hover:text-[var(--color-red)]"
+                    : "text-[var(--color-cream)]/90 hover:text-[var(--color-gold)]"
+              }`}
+            >
+              Participate
+            </Link>
+          </li>
         </ul>
 
-        <a
-          href="#contribute"
+        <Link
+          href="/contribute"
           className="font-display text-[10px] uppercase tracking-[0.1em] px-4 py-2 rounded-[var(--radius-md)] bg-[var(--color-red)] text-[var(--color-cream)] hover:bg-[var(--color-red-deep)] transition-colors max-md:hidden"
         >
-          Add Voice
-        </a>
+          Participate
+        </Link>
       </nav>
     </header>
   );
