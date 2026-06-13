@@ -24,6 +24,11 @@ const SAMPLE_STEP = 120;
 /** Resting y for each of the four band boundaries. */
 const BASE_YS = [22, 80, 138, 196] as const;
 
+/** Stable string formatting so SSR and client hydration produce identical path data. */
+function fmt(n: number): string {
+  return n.toFixed(2);
+}
+
 /**
  * Vertical displacement of the cloth at horizontal position x and time t.
  *
@@ -68,21 +73,21 @@ function sampleBoundary(base: number, tSec: number, lag: number): Sample[] {
  */
 function bandPath(top: Sample[], bottom: Sample[]): string {
   const h = SAMPLE_STEP / 3;
-  let d = `M${top[0].x},${top[0].y}`;
+  let d = `M${top[0].x},${fmt(top[0].y)}`;
 
   for (let i = 0; i < top.length - 1; i++) {
     const a = top[i];
     const b = top[i + 1];
-    d += ` C${a.x + h},${a.y + a.slope * h} ${b.x - h},${b.y - b.slope * h} ${b.x},${b.y}`;
+    d += ` C${a.x + h},${fmt(a.y + a.slope * h)} ${b.x - h},${fmt(b.y - b.slope * h)} ${b.x},${fmt(b.y)}`;
   }
 
   const last = bottom[bottom.length - 1];
-  d += ` L${last.x},${last.y}`;
+  d += ` L${last.x},${fmt(last.y)}`;
 
   for (let i = bottom.length - 1; i > 0; i--) {
     const a = bottom[i];
     const b = bottom[i - 1];
-    d += ` C${a.x - h},${a.y - a.slope * h} ${b.x + h},${b.y + b.slope * h} ${b.x},${b.y}`;
+    d += ` C${a.x - h},${fmt(a.y - a.slope * h)} ${b.x + h},${fmt(b.y + b.slope * h)} ${b.x},${fmt(b.y)}`;
   }
 
   return d + " Z";
@@ -103,12 +108,12 @@ function buildTransform(elapsed: number): string {
   const rotate = Math.sin(elapsed * 0.00055) * 1.1;
   const scale = 1 + Math.sin(elapsed * 0.00085) * 0.012;
 
-  return `translate(${swayX} ${swayY}) rotate(${rotate} 720 120) scale(${scale})`;
+  return `translate(${fmt(swayX)} ${fmt(swayY)}) rotate(${fmt(rotate)} 720 120) scale(${fmt(scale)})`;
 }
 
 export default function FlagWaves({ className = "" }: Props) {
   const [paths, setPaths] = useState(() => computeBandPaths(0));
-  const [transform, setTransform] = useState("translate(0 0)");
+  const [transform, setTransform] = useState(() => buildTransform(0));
   const [animate, setAnimate] = useState(true);
   const rafRef = useRef<number>(0);
   const startRef = useRef<number | null>(null);

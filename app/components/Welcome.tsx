@@ -9,6 +9,7 @@ interface Props {
 }
 
 const SEEN_KEY = "ptc-welcomed-v2";
+const CURRENT_YEAR = new Date().getFullYear();
 
 type Phase = "intro" | "exit" | "done";
 
@@ -89,8 +90,11 @@ export default function Welcome({ onComplete }: Props) {
               </span>
               <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent" />
             </div>
-            <span className="animate-year-tick font-display text-[clamp(28px,5vw,48px)] shimmer-text tabular-nums">
-              2026
+            <span
+              className="welcome-year-end font-display text-[clamp(28px,5vw,48px)] tabular-nums"
+              aria-label={`Present day, ${CURRENT_YEAR}`}
+            >
+              <span className="welcome-year-end-shimmer">{CURRENT_YEAR}</span>
             </span>
           </div>
 

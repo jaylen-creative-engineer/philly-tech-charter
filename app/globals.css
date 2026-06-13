@@ -138,8 +138,18 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .animate-drift,
   .marquee-track,
-  .blue-texture-grid {
+  .blue-texture-grid,
+  .welcome-year-end,
+  .welcome-year-end-shimmer {
     animation: none;
+  }
+
+  .welcome-year-end {
+    opacity: 1;
+  }
+
+  .welcome-year-end-shimmer {
+    -webkit-text-fill-color: var(--color-gold);
   }
 }
 
@@ -166,6 +176,27 @@ body::before {
 
 .welcome-enter-btn {
   border-radius: var(--radius-md);
+}
+
+/* Outer span fades in; inner span shimmers — kept separate so animations don't clash */
+.welcome-year-end {
+  animation: yearTick 0.8s 0.5s ease forwards;
+  opacity: 0;
+}
+
+.welcome-year-end-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) 0%,
+    var(--color-cream) 40%,
+    var(--color-gold) 60%,
+    var(--color-cream) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s 1.3s linear infinite;
 }
 
 /* Hold the hero entrance animations until the welcome curtain lifts */
