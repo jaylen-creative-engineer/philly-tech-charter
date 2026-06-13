@@ -20,9 +20,12 @@ export default function Welcome({ onComplete }: Props) {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!reduceMotion && !sessionStorage.getItem(SEEN_KEY)) return;
-    setShouldShow(false);
-    setPhase("done");
-    onComplete();
+    const t = setTimeout(() => {
+      setShouldShow(false);
+      setPhase("done");
+      onComplete();
+    }, 0);
+    return () => clearTimeout(t);
   }, [onComplete]);
 
   useEffect(() => {

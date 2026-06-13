@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SECTIONS = [
@@ -16,13 +18,12 @@ interface Props {
 export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
   const [active, setActive] = useState<string>("");
   const [scrolled, setScrolled] = useState(false);
-  const [pathname, setPathname] = useState("");
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!visible) return;
 
     const onScroll = () => setScrolled(window.scrollY > 60);
-    setPathname(window.location.pathname);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -66,7 +67,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
       </div>
 
       <nav className="flex items-center justify-between px-6 py-3 max-md:px-4">
-        <a
+        <Link
           href="/"
           className="font-display text-[13px] leading-tight tracking-tight group"
           onClick={(e) => {
@@ -83,7 +84,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
             {" "}
             Charter
           </span>
-        </a>
+        </Link>
 
         <ul className="flex items-center gap-1 max-md:gap-0">
           {SECTIONS.map(({ id, label }) => (
@@ -103,7 +104,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
             </li>
           ))}
           <li>
-            <a
+            <Link
               href="/contribute"
               className={`font-display text-[10px] uppercase tracking-[0.12em] px-3 py-2 transition-all duration-200 max-md:px-2 max-md:text-[9px] ${
                 pathname === "/contribute"
@@ -114,16 +115,16 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
               }`}
             >
               Participate
-            </a>
+            </Link>
           </li>
         </ul>
 
-        <a
+        <Link
           href="/contribute"
           className="font-display text-[10px] uppercase tracking-[0.1em] px-4 py-2 rounded-[var(--radius-md)] bg-[var(--color-red)] text-[var(--color-cream)] hover:bg-[var(--color-red-deep)] transition-colors max-md:hidden"
         >
           Participate
-        </a>
+        </Link>
       </nav>
     </header>
   );

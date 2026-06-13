@@ -117,6 +117,8 @@ export default function FlagWaves({ className = "" }: Props) {
   const [animate, setAnimate] = useState(true);
   const rafRef = useRef<number>(0);
   const startRef = useRef<number | null>(null);
+  const renderedPaths = animate ? paths : computeBandPaths(0);
+  const renderedTransform = animate ? transform : "translate(0 0)";
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -128,8 +130,6 @@ export default function FlagWaves({ className = "" }: Props) {
 
   useEffect(() => {
     if (!animate) {
-      setPaths(computeBandPaths(0));
-      setTransform("translate(0 0)");
       startRef.current = null;
       return;
     }
@@ -172,8 +172,8 @@ export default function FlagWaves({ className = "" }: Props) {
         </mask>
       </defs>
 
-      <g mask="url(#flag-wave-mask)" transform={transform}>
-        {paths.map((d, i) => (
+      <g mask="url(#flag-wave-mask)" transform={renderedTransform}>
+        {renderedPaths.map((d, i) => (
           <path key={i} d={d} fill={COLORS[i]} />
         ))}
       </g>
