@@ -168,11 +168,9 @@ function TypewriterText({
 
   useEffect(() => {
     if (reducedMotion) {
-      setVisibleCharacters(text.length);
       return;
     }
 
-    setVisibleCharacters(0);
     let interval: ReturnType<typeof setInterval> | undefined;
 
     const timeout = setTimeout(() => {
@@ -194,9 +192,11 @@ function TypewriterText({
     };
   }, [reducedMotion, speed, startDelay, text]);
 
+  const visibleText = reducedMotion ? text : text.slice(0, visibleCharacters);
+
   return (
     <span className={`typewriter-copy ${className}`} role="text" aria-label={text}>
-      <span aria-hidden="true">{text.slice(0, visibleCharacters)}</span>
+      <span aria-hidden="true">{visibleText}</span>
       {cursor && !reducedMotion && <span className="typewriter-cursor" aria-hidden="true" />}
     </span>
   );
@@ -221,6 +221,8 @@ export default function ContributionExperience() {
   const contributionText = text.trim();
   const selectedOption = KIND_OPTIONS.find((option) => option.kind === kind);
   const prefersReducedMotion = usePrefersReducedMotion();
+  const previewPrompt = selectedOption?.previewPrompt ?? "Once you choose a path, we will show the card it creates.";
+  const detailsPrompt = selectedOption?.detailsPrompt ?? "Tell us what should go on the card.";
   const consoleText = getConsoleText({
     kind,
     name,
@@ -408,6 +410,7 @@ export default function ContributionExperience() {
                   &gt;{" "}
                 </span>
                 <TypewriterText
+                  key={consoleText}
                   text={consoleText}
                   speed={16}
                   cursor
@@ -460,7 +463,8 @@ export default function ContributionExperience() {
               </p>
               <h2 className="font-display mb-4 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
                 <TypewriterText
-                  text={selectedOption?.previewPrompt ?? "Once you choose a path, we will show the card it creates."}
+                  key={previewPrompt}
+                  text={previewPrompt}
                   speed={20}
                   cursor={hasSelectedKind}
                   reducedMotion={prefersReducedMotion}
@@ -490,7 +494,8 @@ export default function ContributionExperience() {
               </p>
               <h2 className="font-display mb-6 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
                 <TypewriterText
-                  text={selectedOption?.detailsPrompt ?? "Tell us what should go on the card."}
+                  key={detailsPrompt}
+                  text={detailsPrompt}
                   speed={20}
                   cursor={hasSelectedKind}
                   reducedMotion={prefersReducedMotion}
