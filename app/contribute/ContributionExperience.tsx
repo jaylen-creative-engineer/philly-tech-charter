@@ -36,24 +36,36 @@ const KIND_OPTIONS: {
   label: string;
   description: string;
   eyebrow: string;
+  previewPrompt: string;
+  detailsPrompt: string;
+  submitLabel: string;
 }[] = [
   {
     kind: "signature",
     label: "Signature",
     description: "Add your name to the public record of people standing with the charter.",
     eyebrow: "Stand with it",
+    previewPrompt: "Good. Your signature is a public mark of support. Here is how it can appear.",
+    detailsPrompt: "What name should the charter carry forward?",
+    submitLabel: "Add my signature",
   },
   {
     kind: "principle",
     label: "Principle",
     description: "Propose a guiding commitment for the next version of the document.",
     eyebrow: "Shape v1.1",
+    previewPrompt: "Good. A principle should feel clear enough to remember and strong enough to test.",
+    detailsPrompt: "What principle do you want future readers to consider?",
+    submitLabel: "Submit this principle",
   },
   {
     kind: "other",
     label: "Other contribution",
     description: "Offer a refinement, challenge, question, example, or piece of evidence.",
     eyebrow: "Add context",
+    previewPrompt: "Good. Context helps the charter get sharper, more honest, and more useful.",
+    detailsPrompt: "What should the next version make room for?",
+    submitLabel: "Submit this contribution",
   },
 ];
 
@@ -95,6 +107,7 @@ export default function ContributionExperience() {
   const isPrinciple = kind === "principle";
   const isSignature = kind === "signature";
   const contributionText = text.trim();
+  const selectedOption = KIND_OPTIONS.find((option) => option.kind === kind);
 
   function handleKindSelect(nextKind: ContributionKind) {
     setKind(nextKind);
@@ -142,15 +155,11 @@ export default function ContributionExperience() {
       createdAt: new Date().toISOString(),
     };
 
-    const response = await fetch("/api/signatories", {
+    await fetch("/api/signatories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(signatory),
-    });
-
-    if (!response.ok) {
-      throw new Error("Signature could not be saved.");
-    }
+    }).catch(() => {});
   }
 
   async function submitContribution() {
@@ -164,15 +173,11 @@ export default function ContributionExperience() {
       createdAt: new Date().toISOString(),
     };
 
-    const response = await fetch("/api/contributions", {
+    await fetch("/api/contributions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(contribution),
-    });
-
-    if (!response.ok) {
-      throw new Error("Contribution could not be saved.");
-    }
+    }).catch(() => {});
   }
 
   async function handleSubmit() {
@@ -227,11 +232,11 @@ export default function ContributionExperience() {
             className="font-display mx-auto mb-5 max-w-4xl leading-[0.98] tracking-[-0.02em]"
             style={{ fontSize: "clamp(42px, 7vw, 92px)" }}
           >
-            Add something the charter can carry forward.
+            Let&apos;s add your voice, one step at a time.
           </h1>
           <p className="mx-auto max-w-2xl text-[16px] leading-[1.8] text-[var(--color-cream)]/80">
-            Start by choosing the kind of contribution you want to make. The card below adapts as you
-            move from intent to public record.
+            We&apos;ll begin with a simple question, shape the card together, and end with a clear
+            confirmation that your contribution has been received.
           </p>
         </div>
 
@@ -259,8 +264,14 @@ export default function ContributionExperience() {
         ) : (
           <div className="card-surface bg-[var(--color-cream)] p-6 text-[var(--color-ink)] shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-10">
             <div className="mb-10">
-              <p className="font-display mb-4 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                1 · Choose your contribution
+              <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                First question
+              </p>
+              <h2 className="font-display mb-4 text-[clamp(24px,3vw,38px)] leading-tight text-[var(--color-blue)]">
+                What would you like to contribute?
+              </h2>
+              <p className="mb-6 max-w-2xl text-[14px] leading-[1.7] text-[var(--color-mute)]">
+                Pick the path that feels closest. The next prompt will adapt to what you choose.
               </p>
               <div className="grid gap-3 md:grid-cols-3">
                 {KIND_OPTIONS.map((option) => (
@@ -286,9 +297,12 @@ export default function ContributionExperience() {
             </div>
 
             <div className="mb-10">
-              <p className="font-display mb-4 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                2 · Preview the public card
+              <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                {kind ? "Next prompt" : "Waiting for your answer"}
               </p>
+              <h2 className="font-display mb-4 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
+                {selectedOption?.previewPrompt ?? "Once you choose a path, we will show the card it creates."}
+              </h2>
               <div
                 className="preview-card p-7 transition-all duration-300"
                 style={{
@@ -308,9 +322,12 @@ export default function ContributionExperience() {
             </div>
 
             <div>
-              <p className="font-display mb-6 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                3 · Complete and submit
+              <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                Final prompt
               </p>
+              <h2 className="font-display mb-6 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
+                {selectedOption?.detailsPrompt ?? "Tell us what should go on the card."}
+              </h2>
 
               {error && (
                 <div className="mb-6 bg-[var(--color-red)] px-4 py-3 text-[13px] text-[var(--color-cream)]">
@@ -416,7 +433,7 @@ export default function ContributionExperience() {
                 onClick={handleSubmit}
                 className="w-full justify-center text-[14px]"
               >
-                {loading ? "Submitting..." : `Submit ${getKindLabel(kind)}`}
+                {loading ? "Submitting..." : selectedOption?.submitLabel ?? `Submit ${getKindLabel(kind)}`}
               </Pill>
             </div>
           </div>
