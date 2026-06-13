@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import BlueTexture from "../components/BlueTexture";
 import Pill from "../components/Pill";
 import SectionLabel from "../components/SectionLabel";
@@ -69,14 +69,34 @@ const KIND_OPTIONS: {
   },
 ];
 
-const inputBase =
-  "w-full bg-transparent border-0 border-b-2 border-[var(--color-rule-light)] text-[var(--color-ink)] font-sans text-[15px] py-3 outline-none transition-colors duration-200 focus:border-[var(--color-red)] mb-6 placeholder:text-[var(--color-mute)]";
+const cardInputTitle =
+  "w-full bg-transparent border-0 border-b border-transparent text-[20px] font-semibold leading-tight text-[var(--color-blue)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mb-1";
 
-const labelBase =
-  "font-display block text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)] mb-2";
+const cardInputContext =
+  "w-full bg-transparent border-0 border-b border-transparent text-[12px] text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mt-1";
 
-const textareaBase =
-  "w-full bg-transparent border-2 border-[var(--color-rule-light)] text-[var(--color-ink)] font-sans text-[15px] p-4 outline-none transition-colors duration-200 focus:border-[var(--color-red)] mb-2 resize-y min-h-[150px] placeholder:text-[var(--color-mute)]";
+const cardInputPrincipleTitle =
+  "w-full bg-transparent border-0 border-b border-transparent font-display text-[13px] uppercase tracking-[0.08em] text-[var(--color-blue)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mb-3";
+
+const cardTextarea =
+  "w-full bg-transparent border-0 text-[16px] font-medium leading-[1.7] text-[var(--color-ink)] outline-none resize-none min-h-[96px] placeholder:text-[var(--color-mute)]/45 p-0 mb-5";
+
+const cardAttributionInput =
+  "w-full bg-transparent border-0 border-b border-transparent text-[12px] font-medium text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0";
+
+const CONVERSATION_PACE = {
+  typewriterWelcome: 42,
+  typewriterQuestion: 36,
+  typewriterReply: 32,
+  pauseAfterWelcome: 1270,
+  pauseBeforeQuestion: 750,
+  pauseBeforeReply: 750,
+  pauseBeforeCard: 750,
+  revealDuration: 0.50,
+  cardRevealDuration: 0.3,
+  fieldRevealDuration: 0.75,
+  subtitleFadeMs: 1200,
+} as const;
 
 interface SuccessState {
   kind: ContributionKind;
@@ -112,7 +132,7 @@ function getConsoleText({ kind, name, context, principleTitle, text }: ConsoleSt
       return "Name received. Add optional city or role context, or submit the signature.";
     }
 
-    return "Signature card is ready. Review the preview, then add your name to the record.";
+    return "Signature card is ready. Review it below, then add your name to the record.";
   }
 
   if (kind === "principle") {
@@ -124,14 +144,14 @@ function getConsoleText({ kind, name, context, principleTitle, text }: ConsoleSt
       return "Title received. Now write the principle body in one to three sentences.";
     }
 
-    return "Principle draft is live. Review the card, then submit it for v1.1.";
+    return "Principle draft is live. Edit the card below, then submit it for v1.1.";
   }
 
   if (!text.trim()) {
     return "Contribution path open. Choose a type, then write the perspective this charter needs.";
   }
 
-  return "Contribution draft is live. Review the card, then submit it to the public record.";
+  return "Contribution draft is live. Edit the card below, then submit it to the public record.";
 }
 
 function usePrefersReducedMotion() {
@@ -149,25 +169,53 @@ function usePrefersReducedMotion() {
   return prefersReducedMotion;
 }
 
+type TypewriterSlot =
+  | "welcome-headline"
+  | "first-question"
+  | "preview-prompt"
+  | "details-prompt";
+
+const TYPEWRITER_CURSOR_COLOR: Record<TypewriterSlot, string> = {
+  "welcome-headline": "var(--color-cream)",
+  "first-question": "var(--color-blue)",
+  "preview-prompt": "var(--color-blue)",
+  "details-prompt": "var(--color-blue)",
+};
+
 function TypewriterText({
   text,
+  slot,
+  activeSlot,
   speed = 22,
   startDelay = 0,
   cursor = true,
+  cursorColor,
   reducedMotion,
   className = "",
+  onComplete,
 }: {
   text: string;
+  slot: TypewriterSlot;
+  activeSlot: TypewriterSlot | null;
   speed?: number;
   startDelay?: number;
   cursor?: boolean;
+  cursorColor?: string;
   reducedMotion: boolean;
   className?: string;
+  onComplete?: () => void;
 }) {
   const [visibleCharacters, setVisibleCharacters] = useState(reducedMotion ? text.length : 0);
+  const completedRef = useRef(false);
+  const isActive = activeSlot === slot;
 
   useEffect(() => {
-    if (reducedMotion) {
+    completedRef.current = false;
+    setVisibleCharacters(reducedMotion ? text.length : isActive ? 0 : text.length);
+  }, [isActive, reducedMotion, text]);
+
+  useEffect(() => {
+    if (!isActive || reducedMotion) {
       return;
     }
 
@@ -190,15 +238,63 @@ function TypewriterText({
       clearTimeout(timeout);
       if (interval) clearInterval(interval);
     };
-  }, [reducedMotion, speed, startDelay, text]);
+  }, [isActive, reducedMotion, speed, startDelay, text]);
 
-  const visibleText = reducedMotion ? text : text.slice(0, visibleCharacters);
+  useEffect(() => {
+    if (!isActive || completedRef.current) {
+      return;
+    }
+
+    if (reducedMotion || visibleCharacters >= text.length) {
+      completedRef.current = true;
+      if (!reducedMotion) {
+        onComplete?.();
+      }
+    }
+  }, [isActive, onComplete, reducedMotion, text.length, visibleCharacters]);
+
+  const visibleText = isActive && !reducedMotion ? text.slice(0, visibleCharacters) : text;
+  const showCursor = cursor && isActive && !reducedMotion;
+  const inkColor = cursorColor ?? TYPEWRITER_CURSOR_COLOR[slot];
 
   return (
-    <span className={`typewriter-copy ${className}`} role="text" aria-label={text}>
+    <span
+      className={`typewriter-copy ${className}`}
+      style={{ color: inkColor, ["--typewriter-cursor-color" as string]: inkColor }}
+      role="text"
+      aria-label={text}
+    >
       <span aria-hidden="true">{visibleText}</span>
-      {cursor && !reducedMotion && <span className="typewriter-cursor" aria-hidden="true" />}
+      {showCursor && (
+        <span
+          className={`typewriter-cursor ${slot === "welcome-headline" ? "typewriter-cursor-hero" : ""}`}
+          aria-hidden="true"
+        />
+      )}
     </span>
+  );
+}
+
+function ConversationReveal({
+  visible,
+  children,
+  className = "",
+}: {
+  visible: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <div
+      className={className}
+      style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -212,9 +308,14 @@ export default function ContributionExperience() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessState | null>(null);
+  const [activeTypewriter, setActiveTypewriter] = useState<TypewriterSlot | null>("welcome-headline");
+  const [welcomeHeadlineComplete, setWelcomeHeadlineComplete] = useState(false);
+  const [welcomeComplete, setWelcomeComplete] = useState(false);
+  const [firstQuestionComplete, setFirstQuestionComplete] = useState(false);
+  const [previewPromptComplete, setPreviewPromptComplete] = useState(false);
+  const [detailsPromptComplete, setDetailsPromptComplete] = useState(false);
+  const appliedPreselection = useRef(false);
 
-  const previewName = name.trim() || (kind === "signature" ? "Your Name" : "Anonymous");
-  const previewContext = context.trim();
   const hasSelectedKind = Boolean(kind);
   const isPrinciple = kind === "principle";
   const isSignature = kind === "signature";
@@ -231,10 +332,62 @@ export default function ContributionExperience() {
     text,
   });
 
+  const showGuidanceSection = hasSelectedKind;
+  const showDetailsSection = hasSelectedKind && previewPromptComplete;
+  const showCard = hasSelectedKind && detailsPromptComplete;
+  const showOtherTypePicker = kind === "other" && showCard;
+  const showCardContext = showCard && (isSignature ? name.trim().length > 0 : true);
+  const showCardBody = showCard && (isPrinciple ? principleTitle.trim().length > 0 : kind === "other");
+  const showCardAttribution = showCard && !isSignature && contributionText.length > 0;
+  const showSubmit =
+    showCard &&
+    (isSignature
+      ? name.trim().length > 0
+      : isPrinciple
+        ? principleTitle.trim().length > 0 && contributionText.length > 0
+        : contributionText.length > 0);
+
+  useEffect(() => {
+    if (!prefersReducedMotion) {
+      return;
+    }
+
+    setWelcomeHeadlineComplete(true);
+    setWelcomeComplete(true);
+    setFirstQuestionComplete(true);
+    setActiveTypewriter(null);
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    if (!welcomeComplete || appliedPreselection.current) {
+      return;
+    }
+
+    const param = new URLSearchParams(window.location.search).get("kind");
+    if (param !== "signature" && param !== "principle" && param !== "other") {
+      return;
+    }
+
+    appliedPreselection.current = true;
+    setFirstQuestionComplete(true);
+    handleKindSelect(param);
+  }, [welcomeComplete]);
+
+  function beginConversation() {
+    setWelcomeHeadlineComplete(true);
+    window.setTimeout(() => {
+      setWelcomeComplete(true);
+      setActiveTypewriter("first-question");
+    }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseAfterWelcome);
+  }
+
   function handleKindSelect(nextKind: ContributionKind) {
     setKind(nextKind);
     setError("");
     setSuccess(null);
+    setPreviewPromptComplete(false);
+    setDetailsPromptComplete(false);
+    setActiveTypewriter("preview-prompt");
     if (nextKind === "signature") {
       setPrincipleTitle("");
       setText("");
@@ -251,6 +404,12 @@ export default function ContributionExperience() {
     setError("");
     setLoading(false);
     setSuccess(null);
+    setPreviewPromptComplete(false);
+    setDetailsPromptComplete(false);
+    setWelcomeComplete(true);
+    setWelcomeHeadlineComplete(true);
+    setFirstQuestionComplete(false);
+    setActiveTypewriter("first-question");
   }
 
   function validate() {
@@ -355,19 +514,22 @@ export default function ContributionExperience() {
             style={{ fontSize: "clamp(42px, 7vw, 92px)" }}
           >
             <TypewriterText
-              text="Let's add your voice, one step at a time."
-              speed={32}
+              slot="welcome-headline"
+              activeSlot={activeTypewriter}
+              text="Let's add your voice."
+              speed={CONVERSATION_PACE.typewriterWelcome}
               reducedMotion={prefersReducedMotion}
+              onComplete={beginConversation}
             />
           </h1>
-          <p className="mx-auto max-w-2xl text-[16px] leading-[1.8] text-[var(--color-cream)]/80">
-            <TypewriterText
-              text="We'll begin with a simple question, shape the card together, and end with a clear confirmation that your contribution has been received."
-              speed={14}
-              startDelay={1400}
-              cursor={false}
-              reducedMotion={prefersReducedMotion}
-            />
+          <p
+            className={`mx-auto max-w-2xl text-[16px] leading-[1.8] text-[var(--color-cream)]/80 transition-opacity ease-out ${
+              welcomeHeadlineComplete ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ transitionDuration: `${CONVERSATION_PACE.subtitleFadeMs}ms` }}
+          >
+            We&apos;ll begin with a simple question, shape the card together, and end with a clear
+            confirmation that your contribution has been received.
           </p>
         </div>
 
@@ -375,7 +537,7 @@ export default function ContributionExperience() {
           <div className="mx-auto max-w-[680px] text-center">
             <div
               className="card-surface mb-6 bg-[var(--color-cream)] px-8 py-10 text-[var(--color-blue)]"
-              style={{ animation: "riseIn 0.5s ease forwards" }}
+              style={{ animation: `riseIn ${CONVERSATION_PACE.cardRevealDuration}s ease forwards` }}
             >
               <span className="mb-4 block text-3xl text-[var(--color-gold)]" aria-hidden="true">
                 {success.kind === "signature" ? "★" : "✦"}
@@ -392,8 +554,11 @@ export default function ContributionExperience() {
               </Pill>
             </div>
           </div>
-        ) : (
-          <div className="card-surface bg-[var(--color-cream)] p-6 text-[var(--color-ink)] shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-10">
+        ) : welcomeComplete ? (
+          <div
+            className="card-surface bg-[var(--color-cream)] p-6 text-[var(--color-ink)] shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-10"
+              style={{ animation: `riseIn ${CONVERSATION_PACE.cardRevealDuration}s ease forwards` }}
+          >
             <div className="contribution-console mb-10 p-4">
               <div className="mb-3 flex items-center justify-between gap-4">
                 <p className="font-display text-[9px] uppercase tracking-[0.24em] text-[var(--color-red)]">
@@ -405,224 +570,204 @@ export default function ContributionExperience() {
                   <span className="h-2 w-2 rounded-full bg-[var(--color-blue)]" />
                 </div>
               </div>
-              <p className="font-mono text-[13px] leading-[1.7] text-[var(--color-blue)]">
+              <p className="font-mono text-[13px] leading-[1.7] text-[var(--color-blue)] transition-opacity duration-300">
                 <span className="text-[var(--color-red)]" aria-hidden="true">
                   &gt;{" "}
                 </span>
-                <TypewriterText
-                  key={consoleText}
-                  text={consoleText}
-                  speed={16}
-                  cursor
-                  reducedMotion={prefersReducedMotion}
-                />
+                {consoleText}
               </p>
             </div>
 
             <div className="mb-10">
               <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                First question
+                Philadelphia Declaration · Intake
               </p>
               <h2 className="font-display mb-4 text-[clamp(24px,3vw,38px)] leading-tight text-[var(--color-blue)]">
                 <TypewriterText
+                  slot="first-question"
+                  activeSlot={activeTypewriter}
                   text="What would you like to contribute?"
-                  speed={24}
-                  startDelay={300}
+                  speed={CONVERSATION_PACE.typewriterQuestion}
+                  startDelay={CONVERSATION_PACE.pauseBeforeQuestion}
                   reducedMotion={prefersReducedMotion}
+                  onComplete={() => {
+                    setActiveTypewriter(null);
+                    window.setTimeout(() => {
+                      setFirstQuestionComplete(true);
+                    }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseBeforeReply);
+                  }}
                 />
               </h2>
-              <p className="mb-6 max-w-2xl text-[14px] leading-[1.7] text-[var(--color-mute)]">
-                Pick the path that feels closest. The next prompt will adapt to what you choose.
-              </p>
-              <div className="grid gap-3 md:grid-cols-3">
-                {KIND_OPTIONS.map((option) => (
-                  <button
-                    key={option.kind}
-                    type="button"
-                    data-selected={kind === option.kind}
-                    className="type-card cursor-pointer p-4 text-left"
-                    onClick={() => handleKindSelect(option.kind)}
-                  >
-                    <p className="font-display mb-2 text-[9px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                      {option.eyebrow}
-                    </p>
-                    <p className="font-display mb-2 text-[17px] leading-tight text-[var(--color-blue)]">
-                      {option.label}
-                    </p>
-                    <p className="text-[12px] leading-[1.55] text-[var(--color-mute)]">
-                      {option.description}
-                    </p>
-                  </button>
-                ))}
-              </div>
+              <ConversationReveal visible={firstQuestionComplete}>
+                <p className="mb-6 max-w-2xl text-[14px] leading-[1.7] text-[var(--color-mute)]">
+                  Pick the path that feels closest. The next prompt will adapt to what you choose.
+                </p>
+                <div className="grid gap-3 md:grid-cols-3">
+                  {KIND_OPTIONS.map((option) => (
+                    <button
+                      key={option.kind}
+                      type="button"
+                      data-selected={kind === option.kind}
+                      className="type-card cursor-pointer p-4 text-left"
+                      onClick={() => handleKindSelect(option.kind)}
+                    >
+                      <p className="font-display mb-2 text-[9px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                        {option.eyebrow}
+                      </p>
+                      <p className="font-display mb-2 text-[17px] leading-tight text-[var(--color-blue)]">
+                        {option.label}
+                      </p>
+                      <p className="text-[12px] leading-[1.55] text-[var(--color-mute)]">
+                        {option.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </ConversationReveal>
             </div>
 
-            <div className="mb-10">
+            <ConversationReveal visible={showGuidanceSection} className="mb-10">
               <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                {kind ? "Next prompt" : "Waiting for your answer"}
+                Next
               </p>
               <h2 className="font-display mb-4 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
                 <TypewriterText
                   key={previewPrompt}
+                  slot="preview-prompt"
+                  activeSlot={activeTypewriter}
                   text={previewPrompt}
-                  speed={20}
-                  cursor={hasSelectedKind}
+                  speed={CONVERSATION_PACE.typewriterReply}
+                  startDelay={CONVERSATION_PACE.pauseBeforeReply}
                   reducedMotion={prefersReducedMotion}
+                  onComplete={() => {
+                    setPreviewPromptComplete(true);
+                    setActiveTypewriter("details-prompt");
+                  }}
                 />
               </h2>
-              <div
-                className="preview-card p-7 transition-all duration-300"
-                style={{
-                  opacity: hasSelectedKind ? 1 : 0.6,
-                  transform: hasSelectedKind ? "scale(1)" : "scale(0.99)",
-                }}
-              >
-                <PreviewCard
-                  kind={kind}
-                  otherType={otherType}
-                  name={previewName}
-                  context={previewContext}
-                  principleTitle={principleTitle}
-                  text={contributionText}
-                />
-              </div>
-            </div>
+            </ConversationReveal>
 
-            <div>
+            <ConversationReveal visible={showDetailsSection}>
               <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                Final prompt
+                Your turn
               </p>
               <h2 className="font-display mb-6 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
                 <TypewriterText
                   key={detailsPrompt}
+                  slot="details-prompt"
+                  activeSlot={activeTypewriter}
                   text={detailsPrompt}
-                  speed={20}
-                  cursor={hasSelectedKind}
+                  speed={CONVERSATION_PACE.typewriterReply}
+                  startDelay={CONVERSATION_PACE.pauseBeforeReply}
                   reducedMotion={prefersReducedMotion}
+                  onComplete={() => {
+                    setActiveTypewriter(null);
+                    window.setTimeout(() => {
+                      setDetailsPromptComplete(true);
+                    }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseBeforeCard);
+                  }}
                 />
               </h2>
+            </ConversationReveal>
 
+            <ConversationReveal visible={showCard}>
               {error && (
                 <div className="mb-6 bg-[var(--color-red)] px-4 py-3 text-[13px] text-[var(--color-cream)]">
                   {error}
                 </div>
               )}
 
-              {!kind ? (
-                <p className="mb-8 text-[14px] leading-[1.7] text-[var(--color-mute)]">
-                  Choose signature, principle, or another contribution type to open the right fields.
-                </p>
-              ) : (
-                <>
-                  <label className={labelBase}>
-                    Your Name {isSignature && <span className="text-[var(--color-red)]">*</span>}
-                  </label>
-                  <input
-                    className={inputBase}
-                    type="text"
-                    placeholder={isSignature ? "As you would like it to appear" : "How should we credit you?"}
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    autoComplete="name"
-                  />
-
-                  <label className={labelBase}>City / Role</label>
-                  <input
-                    className={inputBase}
-                    type="text"
-                    placeholder="Philadelphia, PA · Designer"
-                    value={context}
-                    onChange={(event) => setContext(event.target.value)}
-                  />
-
-                  {isPrinciple && (
-                    <div style={{ animation: "riseIn 0.35s ease forwards" }}>
-                      <label className={labelBase}>Principle Title *</label>
-                      <input
-                        className={inputBase}
-                        type="text"
-                        placeholder="A short, memorable phrase"
-                        value={principleTitle}
-                        onChange={(event) => setPrincipleTitle(event.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  {kind === "other" && (
-                    <div className="mb-8" style={{ animation: "riseIn 0.35s ease forwards" }}>
-                      <p className={labelBase}>What kind of contribution is it?</p>
-                      <div className="grid gap-2 md:grid-cols-2">
-                        {OTHER_TYPES.map((option) => (
-                          <button
-                            key={option.type}
-                            type="button"
-                            data-selected={otherType === option.type}
-                            className="type-card cursor-pointer p-3 text-left"
-                            onClick={() => setOtherType(option.type)}
-                          >
-                            <p className="font-display mb-1 text-[10px] uppercase tracking-[0.08em] text-[var(--color-blue)]">
-                              {option.short}
-                            </p>
-                            <p className="text-[11px] leading-snug text-[var(--color-mute)]">
-                              {option.hint}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {!isSignature && (
-                    <>
-                      <label className={labelBase}>
-                        {isPrinciple ? "Principle Body *" : "Your Contribution *"}
-                      </label>
-                      <textarea
-                        className={textareaBase}
-                        placeholder={
-                          isPrinciple
-                            ? "Describe the principle in 1-3 sentences."
-                            : "Write the refinement, question, example, or challenge you want to add."
-                        }
-                        value={text}
-                        onChange={(event) => setText(event.target.value)}
-                      />
-                      <p className="mb-8 text-[11px] text-[var(--color-mute)]">
-                        {text.length > 0 ? `${text.length} characters` : "Start writing to complete the card."}
-                      </p>
-                    </>
-                  )}
-
-                  {isSignature && (
-                    <p className="mb-8 text-[12px] leading-[1.6] text-[var(--color-mute)]">
-                      Your name joins the public signatory record. Optional context appears beneath it.
-                    </p>
-                  )}
-                </>
+              {showOtherTypePicker && (
+                <div className="mb-6" style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}>
+                  <p className="font-display mb-3 text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)]">
+                    What kind of contribution is it?
+                  </p>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {OTHER_TYPES.map((option) => (
+                      <button
+                        key={option.type}
+                        type="button"
+                        data-selected={otherType === option.type}
+                        className="type-card cursor-pointer p-3 text-left"
+                        onClick={() => setOtherType(option.type)}
+                      >
+                        <p className="font-display mb-1 text-[10px] uppercase tracking-[0.08em] text-[var(--color-blue)]">
+                          {option.short}
+                        </p>
+                        <p className="text-[11px] leading-snug text-[var(--color-mute)]">
+                          {option.hint}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
 
-              <Pill
-                variant="red"
-                onClick={handleSubmit}
-                className="w-full justify-center text-[14px]"
-              >
-                {loading ? "Submitting..." : selectedOption?.submitLabel ?? `Submit ${getKindLabel(kind)}`}
-              </Pill>
-            </div>
+              <p className="font-display mb-3 text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)]">
+                {isSignature ? "Your signature card" : "Your contribution card"}
+              </p>
+              <p className="mb-4 text-[13px] leading-[1.6] text-[var(--color-mute)]">
+                Edit directly in the card below. This is what will appear in the public record.
+              </p>
+
+              <div className="preview-card p-7">
+                <ContributionCard
+                  kind={kind}
+                  otherType={otherType}
+                  name={name}
+                  context={context}
+                  principleTitle={principleTitle}
+                  text={text}
+                  showContext={showCardContext}
+                  showBody={showCardBody}
+                  showAttribution={showCardAttribution}
+                  onNameChange={setName}
+                  onContextChange={setContext}
+                  onPrincipleTitleChange={setPrincipleTitle}
+                  onTextChange={setText}
+                />
+              </div>
+
+              {isSignature && showCardContext && (
+                <p
+                  className="mt-4 text-[12px] leading-[1.6] text-[var(--color-mute)]"
+                  style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}
+                >
+                  Your name joins the public signatory record. Optional context appears beneath it.
+                </p>
+              )}
+
+              <ConversationReveal visible={Boolean(showSubmit)} className="mt-8">
+                <Pill
+                  variant="red"
+                  onClick={handleSubmit}
+                  className="w-full justify-center text-[14px]"
+                >
+                  {loading ? "Submitting..." : selectedOption?.submitLabel ?? `Submit ${getKindLabel(kind)}`}
+                </Pill>
+              </ConversationReveal>
+            </ConversationReveal>
           </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
 }
 
-function PreviewCard({
+function ContributionCard({
   kind,
   otherType,
   name,
   context,
   principleTitle,
   text,
+  showContext,
+  showBody,
+  showAttribution,
+  onNameChange,
+  onContextChange,
+  onPrincipleTitleChange,
+  onTextChange,
 }: {
   kind: ContributionKind | "";
   otherType: ContributionType;
@@ -630,6 +775,13 @@ function PreviewCard({
   context: string;
   principleTitle: string;
   text: string;
+  showContext: boolean;
+  showBody: boolean;
+  showAttribution: boolean;
+  onNameChange: (value: string) => void;
+  onContextChange: (value: string) => void;
+  onPrincipleTitleChange: (value: string) => void;
+  onTextChange: (value: string) => void;
 }) {
   if (kind === "signature") {
     return (
@@ -638,19 +790,36 @@ function PreviewCard({
           <span className="shrink-0 text-lg text-[var(--color-gold)]" aria-hidden="true">
             ★
           </span>
-          <div>
-            <p className="font-display mb-1 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+          <div className="min-w-0 flex-1">
+            <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
               Signatory
             </p>
-            <p className="text-[20px] font-semibold leading-tight text-[var(--color-blue)]">
-              {name}
-            </p>
-            {context ? (
-              <p className="mt-1 text-[12px] text-[var(--color-mute)]">{context}</p>
-            ) : (
-              <p className="mt-1 text-[12px] italic text-[var(--color-mute)]/50">
-                City / role will appear here
-              </p>
+            <label className="sr-only" htmlFor="signature-name">
+              Your name
+            </label>
+            <input
+              id="signature-name"
+              className={cardInputTitle}
+              type="text"
+              placeholder="Your name"
+              value={name}
+              onChange={(event) => onNameChange(event.target.value)}
+              autoComplete="name"
+            />
+            {showContext && (
+              <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
+                <label className="sr-only" htmlFor="signature-context">
+                  City or role
+                </label>
+                <input
+                  id="signature-context"
+                  className={cardInputContext}
+                  type="text"
+                  placeholder="Philadelphia, PA · Designer (optional)"
+                  value={context}
+                  onChange={(event) => onContextChange(event.target.value)}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -667,22 +836,65 @@ function PreviewCard({
         <p className="font-display mb-3 text-[9px] uppercase tracking-[0.25em] text-[var(--color-red)]">
           A new principle
         </p>
-        <p className="font-display mb-3 text-[13px] uppercase tracking-[0.08em] text-[var(--color-blue)]">
-          {principleTitle.trim() || "Principle title"}
-        </p>
-        <p className="mb-5 min-h-[72px] text-[16px] font-medium leading-[1.7] text-[var(--color-ink)]">
-          {text ? (
-            <>&ldquo;{text}&rdquo;</>
-          ) : (
-            <span className="font-normal italic text-[var(--color-mute)]/45">
-              Your proposed principle will appear here.
-            </span>
-          )}
-        </p>
-        <p className="border-t border-[var(--color-rule-light)] pt-4 text-[12px] font-medium text-[var(--color-mute)]">
-          {name}
-          {context ? ` · ${context}` : ""}
-        </p>
+        <label className="sr-only" htmlFor="principle-title">
+          Principle title
+        </label>
+        <input
+          id="principle-title"
+          className={cardInputPrincipleTitle}
+          type="text"
+          placeholder="Principle title"
+          value={principleTitle}
+          onChange={(event) => onPrincipleTitleChange(event.target.value)}
+        />
+        {showBody && (
+          <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
+            <label className="sr-only" htmlFor="principle-body">
+              Principle body
+            </label>
+            <textarea
+              id="principle-body"
+              className={cardTextarea}
+              placeholder="Describe the principle in one to three sentences."
+              value={text}
+              onChange={(event) => onTextChange(event.target.value)}
+              rows={4}
+            />
+            {text.length > 0 && (
+              <p className="mb-5 text-[11px] text-[var(--color-mute)]">{text.length} characters</p>
+            )}
+          </div>
+        )}
+        {showAttribution && (
+          <div
+            className="border-t border-[var(--color-rule-light)] pt-4"
+            style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}
+          >
+            <label className="sr-only" htmlFor="principle-name">
+              Your name
+            </label>
+            <input
+              id="principle-name"
+              className={`${cardAttributionInput} mb-2`}
+              type="text"
+              placeholder="Your name"
+              value={name}
+              onChange={(event) => onNameChange(event.target.value)}
+              autoComplete="name"
+            />
+            <label className="sr-only" htmlFor="principle-context">
+              City or role
+            </label>
+            <input
+              id="principle-context"
+              className={cardAttributionInput}
+              type="text"
+              placeholder="City / role (optional)"
+              value={context}
+              onChange={(event) => onContextChange(event.target.value)}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -693,31 +905,57 @@ function PreviewCard({
         <p className="font-display mb-3 text-[9px] uppercase tracking-[0.25em] text-[var(--color-red)]">
           {otherType}
         </p>
-        <p className="mb-5 min-h-[72px] text-[16px] font-medium leading-[1.7] text-[var(--color-ink)]">
-          {text ? (
-            <>&ldquo;{text}&rdquo;</>
-          ) : (
-            <span className="font-normal italic text-[var(--color-mute)]/45">
-              Your contribution will appear here as a card.
-            </span>
-          )}
-        </p>
-        <p className="border-t border-[var(--color-rule-light)] pt-4 text-[12px] font-medium text-[var(--color-mute)]">
-          {name}
-          {context ? ` · ${context}` : ""}
-        </p>
+        {showBody && (
+          <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
+            <label className="sr-only" htmlFor="contribution-body">
+              Your contribution
+            </label>
+            <textarea
+              id="contribution-body"
+              className={cardTextarea}
+              placeholder="Write the refinement, question, example, or challenge you want to add."
+              value={text}
+              onChange={(event) => onTextChange(event.target.value)}
+              rows={4}
+            />
+            {text.length > 0 && (
+              <p className="mb-5 text-[11px] text-[var(--color-mute)]">{text.length} characters</p>
+            )}
+          </div>
+        )}
+        {showAttribution && (
+          <div
+            className="border-t border-[var(--color-rule-light)] pt-4"
+            style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}
+          >
+            <label className="sr-only" htmlFor="contribution-name">
+              Your name
+            </label>
+            <input
+              id="contribution-name"
+              className={`${cardAttributionInput} mb-2`}
+              type="text"
+              placeholder="Your name"
+              value={name}
+              onChange={(event) => onNameChange(event.target.value)}
+              autoComplete="name"
+            />
+            <label className="sr-only" htmlFor="contribution-context">
+              City or role
+            </label>
+            <input
+              id="contribution-context"
+              className={cardAttributionInput}
+              type="text"
+              placeholder="City / role (optional)"
+              value={context}
+              onChange={(event) => onContextChange(event.target.value)}
+            />
+          </div>
+        )}
       </div>
     );
   }
 
-  return (
-    <div>
-      <p className="font-display mb-3 text-[9px] uppercase tracking-[0.25em] text-[var(--color-mute)]/60">
-        Waiting for your choice
-      </p>
-      <p className="min-h-[72px] text-[16px] font-medium leading-[1.7] text-[var(--color-mute)]/50">
-        Select a contribution type above to see the shape of what you can add.
-      </p>
-    </div>
-  );
+  return null;
 }

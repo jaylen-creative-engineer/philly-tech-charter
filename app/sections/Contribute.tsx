@@ -1,23 +1,28 @@
+import Link from "next/link";
 import ScrollReveal from "../components/ScrollReveal";
 import SectionLabel from "../components/SectionLabel";
 import Pill from "../components/Pill";
+
 const PATHS = [
   {
+    kind: "signature",
     label: "Signature",
     title: "Stand with the charter.",
     body: "Add your name to the public record of people who believe this work should move forward.",
   },
   {
+    kind: "principle",
     label: "Principle",
     title: "Write a commitment.",
     body: "Propose a guiding idea that could shape the next version of the declaration.",
   },
   {
+    kind: "other",
     label: "Other",
     title: "Add context.",
     body: "Offer a refinement, challenge, question, example, or piece of evidence for v1.1.",
   },
-];
+] as const;
 
 export default function Contribute() {
   return (
@@ -48,7 +53,11 @@ export default function Contribute() {
         <div className="card-surface border-[3px] border-[var(--color-blue)] bg-[var(--color-paper)] p-8 text-left max-md:p-6">
           <div className="grid gap-3 md:grid-cols-3">
             {PATHS.map((path) => (
-              <div key={path.label} className="type-card p-5">
+              <Link
+                key={path.label}
+                href={`/contribute?kind=${path.kind}`}
+                className="type-card block p-5 text-left no-underline"
+              >
                 <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
                   {path.label}
                 </p>
@@ -58,7 +67,7 @@ export default function Contribute() {
                 <p className="text-[13px] leading-[1.65] text-[var(--color-mute)]">
                   {path.body}
                 </p>
-              </div>
+              </Link>
             ))}
           </div>
 
