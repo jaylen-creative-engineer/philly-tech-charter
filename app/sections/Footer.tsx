@@ -15,7 +15,7 @@ export default function Footer() {
         <br />
         Written in Philadelphia, PA
         <br />
-        <a href="#contribute" className="text-[var(--color-gold)] no-underline hover:underline">
+        <a href="/contribute" className="text-[var(--color-gold)] no-underline hover:underline">
           Contribute to v1.1 →
         </a>
       </div>

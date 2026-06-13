@@ -8,7 +8,7 @@ const LINKS = [
   { href: "#document", label: "Document" },
   { href: "#principles", label: "Principles" },
   { href: "#voices", label: "Voices" },
-  { href: "#sign", label: "Sign" },
+  { href: "/contribute", label: "Participate" },
 ];
 
 export default function StickyNav() {
@@ -46,8 +46,8 @@ export default function StickyNav() {
           ))}
         </nav>
 
-        <Pill variant="red" href="#contribute" className="!px-5 !py-2 text-[11px]">
-          Add Your Voice
+        <Pill variant="red" href="/contribute" className="!px-5 !py-2 text-[11px]">
+          Participate
         </Pill>
       </div>
 

@@ -36,8 +36,8 @@ export default function ClosingCTA() {
           Two hundred fifty years from now, someone will read what this generation chose to write. Add your voice while the ink is still wet.
         </p>
         <div className="flex items-center justify-center gap-4 max-md:flex-col">
-          <Pill variant="red" href="#contribute">Contribute to the Document</Pill>
-          <Pill variant="outline" href="#sign">Sign the Charter</Pill>
+          <Pill variant="red" href="/contribute">Contribute to the Document</Pill>
+          <Pill variant="outline" href="/contribute">Sign the Charter</Pill>
         </div>
       </motion.div>
     </section>
