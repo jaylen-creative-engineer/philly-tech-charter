@@ -49,10 +49,10 @@ export default function Home() {
       <Nav visible={entered} />
       <main data-entered={entered}>
         <Hero />
-        <div aria-hidden="true">
-          <div className="h-1.5 bg-[var(--color-red)]" />
-          <div className="h-1.5 bg-[var(--color-cream)]" />
-          <div className="h-1.5 bg-[var(--color-blue)]" />
+        <div aria-hidden="true" className="flex h-[3px]">
+          <div className="flex-[2] bg-[var(--color-red)]" />
+          <div className="flex-1 bg-[var(--color-white)]" />
+          <div className="flex-[2] bg-[var(--color-blue)]" />
         </div>
         <Intro />
         <Statement />

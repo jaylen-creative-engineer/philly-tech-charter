@@ -132,6 +132,16 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
       <li>
         <Link
           href="/contribute"
+          className={`nav-cta max-md:hidden ${pathname === "/contribute" ? "opacity-90" : ""}`}
+          aria-current={pathname === "/contribute" ? "page" : undefined}
+          onClick={() => setMenuOpen(false)}
+        >
+          Participate
+        </Link>
+      </li>
+      <li className="md:hidden">
+        <Link
+          href="/contribute"
           className={linkClass(pathname === "/contribute")}
           aria-current={pathname === "/contribute" ? "page" : undefined}
           onClick={() => setMenuOpen(false)}
@@ -152,8 +162,8 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
     >
       <div className="nav-stripe" aria-hidden="true">
         <span className="bg-[var(--color-red)]" />
-        <span className="bg-[var(--color-gold)]" />
-        <span className="bg-[var(--color-cream)]" />
+        <span className="bg-[var(--color-white)]" />
+        <span className="bg-[var(--color-blue)]" />
       </div>
 
       <nav
