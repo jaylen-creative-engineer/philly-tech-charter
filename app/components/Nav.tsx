@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 const SECTIONS = [
   { id: "document", label: "Charter" },
@@ -21,9 +21,13 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const menuId = useId();
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const scriptRef = useRef<HTMLSpanElement>(null);
   const blockRef = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
+
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   useEffect(() => {
     if (!visible) return;
@@ -55,14 +59,34 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
 
   useEffect(() => {
     if (!menuOpen) return;
-    const close = () => setMenuOpen(false);
-    window.addEventListener("scroll", close, { passive: true });
-    window.addEventListener("resize", close);
-    return () => {
-      window.removeEventListener("scroll", close);
-      window.removeEventListener("resize", close);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeMenu();
+        menuBtnRef.current?.focus();
+      }
     };
-  }, [menuOpen]);
+
+    const onResize = () => {
+      if (window.matchMedia("(min-width: 768px)").matches) {
+        closeMenu();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onResize);
+
+    const drawer = drawerRef.current;
+    const focusable = drawer?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    focusable?.[0]?.focus();
+
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [menuOpen, closeMenu]);
 
   useEffect(() => {
     if (!visible) return;
@@ -109,51 +133,26 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
       .filter(Boolean)
       .join(" ");
 
-  const navLinks = (
-    <>
-      {SECTIONS.map(({ id, label }, index) => {
-        const isActive = active === id && pathname !== "/contribute";
-        return (
-          <li key={id}>
-            <a
-              href={`${sectionHrefPrefix}${id}`}
-              className={linkClass(isActive)}
-              aria-current={isActive ? "location" : undefined}
-              onClick={() => setMenuOpen(false)}
-            >
-              <span className="nav-link-index" aria-hidden="true">
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              {label}
-            </a>
-          </li>
-        );
-      })}
-      <li>
-        <Link
-          href="/contribute"
-          className={`nav-cta max-md:hidden ${pathname === "/contribute" ? "opacity-90" : ""}`}
-          aria-current={pathname === "/contribute" ? "page" : undefined}
-          onClick={() => setMenuOpen(false)}
-        >
-          Participate
-        </Link>
-      </li>
-      <li className="md:hidden">
-        <Link
-          href="/contribute"
-          className={linkClass(pathname === "/contribute")}
-          aria-current={pathname === "/contribute" ? "page" : undefined}
-          onClick={() => setMenuOpen(false)}
+  const renderSectionLink = (id: string, label: string, index: number) => {
+    const isActive = active === id && pathname !== "/contribute";
+    return (
+      <li key={id}>
+        <a
+          href={`${sectionHrefPrefix}${id}`}
+          className={linkClass(isActive)}
+          aria-current={isActive ? "location" : undefined}
+          onClick={closeMenu}
         >
           <span className="nav-link-index" aria-hidden="true">
-            04
+            {String(index + 1).padStart(2, "0")}
           </span>
-          Participate
-        </Link>
+          {label}
+        </a>
       </li>
-    </>
-  );
+    );
+  };
+
+  const participateActive = pathname === "/contribute";
 
   return (
     <header
@@ -166,10 +165,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
         <span className="bg-[var(--color-blue)]" />
       </div>
 
-      <nav
-        className="nav-inner"
-        aria-label="Primary"
-      >
+      <nav className="nav-inner" aria-label="Primary">
         <Link
           href="/"
           className={`nav-brand ${onHero ? "nav-brand--hero" : "nav-brand--surface"}`}
@@ -179,7 +175,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
               e.preventDefault();
               window.scrollTo({ top: 0, behavior: "smooth" });
             }
-            setMenuOpen(false);
+            closeMenu();
           }}
         >
           <span className="nav-brand-lockup">
@@ -203,13 +199,26 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
           </span>
         </Link>
 
-        <ul className="nav-links max-md:hidden">{navLinks}</ul>
+        <ul className="nav-links nav-links--desktop">
+          {SECTIONS.map(({ id, label }, index) => renderSectionLink(id, label, index))}
+          <li>
+            <Link
+              href="/contribute"
+              className={`nav-cta ${participateActive ? "opacity-90" : ""}`}
+              aria-current={participateActive ? "page" : undefined}
+            >
+              Participate
+            </Link>
+          </li>
+        </ul>
 
         <button
+          ref={menuBtnRef}
           type="button"
-          className={`nav-menu-btn max-md:flex ${menuOpen ? "nav-menu-btn--open" : ""}`}
+          className={`nav-menu-btn ${menuOpen ? "nav-menu-btn--open" : ""}`}
           aria-expanded={menuOpen}
           aria-controls={menuId}
+          aria-haspopup="true"
           onClick={() => setMenuOpen((open) => !open)}
         >
           <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
@@ -221,11 +230,30 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
       </nav>
 
       <div
+        ref={drawerRef}
         id={menuId}
-        className={`nav-drawer md:hidden ${menuOpen ? "nav-drawer--open" : ""}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile navigation"
+        className={`nav-drawer ${menuOpen ? "nav-drawer--open" : ""}`}
         hidden={!menuOpen}
       >
-        <ul className="nav-drawer-links">{navLinks}</ul>
+        <ul className="nav-drawer-links">
+          {SECTIONS.map(({ id, label }, index) => renderSectionLink(id, label, index))}
+          <li>
+            <Link
+              href="/contribute"
+              className={linkClass(participateActive)}
+              aria-current={participateActive ? "page" : undefined}
+              onClick={closeMenu}
+            >
+              <span className="nav-link-index" aria-hidden="true">
+                04
+              </span>
+              Participate
+            </Link>
+          </li>
+        </ul>
       </div>
     </header>
   );

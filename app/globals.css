@@ -323,6 +323,12 @@ body::before {
   padding: 0;
 }
 
+@media (max-width: 767px) {
+  .nav-links--desktop {
+    display: none;
+  }
+}
+
 .nav-link {
   position: relative;
   display: inline-flex;
@@ -426,7 +432,7 @@ body::before {
 .nav-menu-btn {
   position: relative;
   z-index: 1;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 2.5rem;
@@ -497,6 +503,12 @@ body::before {
   box-shadow: var(--shadow-md);
 }
 
+@media (min-width: 768px) {
+  .nav-drawer {
+    display: none;
+  }
+}
+
 .nav-bar--surface .nav-drawer,
 .nav-bar--hero .nav-drawer {
   border-top-color: var(--color-rule-light);
@@ -516,6 +528,12 @@ body::before {
   width: 100%;
   justify-content: flex-start;
   font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .nav-menu-btn {
+    display: none;
+  }
 }
 
 @media (max-width: 767px) {
