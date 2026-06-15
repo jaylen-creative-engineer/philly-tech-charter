@@ -770,7 +770,9 @@ main[data-entered="false"] [class*=" animate-"] {
   transform: translate3d(var(--star-x), var(--star-y), 0) rotate(var(--star-tilt)) scale(var(--star-scale));
   transform-origin: 50% 50%;
   animation: heroStarTurn var(--star-speed) cubic-bezier(0.55, 0, 0.25, 1) infinite;
-  filter: drop-shadow(0 24px 24px rgba(3, 9, 31, 0.32));
+  filter:
+    drop-shadow(0 0 8px rgba(255, 247, 197, 0.26))
+    drop-shadow(0 24px 24px rgba(3, 9, 31, 0.36));
   will-change: transform;
 }
 
@@ -781,7 +783,7 @@ main[data-entered="false"] [class*=" animate-"] {
   top: 14%;
   right: 8%;
   width: clamp(8.5rem, 16vw, 14rem);
-  opacity: 0.92;
+  opacity: 0.96;
 }
 
 .hero-star--upper {
@@ -807,28 +809,47 @@ main[data-entered="false"] [class*=" animate-"] {
 }
 
 .hero-star-shadow {
-  fill: rgba(3, 9, 31, 0.28);
-  transform: translate(3px, 5px);
+  fill: rgba(3, 9, 31, 0.34);
+  transform: translate(3.5px, 5.5px);
 }
 
-.hero-star-rim {
-  fill: rgba(10, 20, 54, 0.42);
-  stroke: rgba(245, 240, 230, 0.78);
-  stroke-width: 8;
+.hero-star-white-outline {
+  fill: rgba(212, 161, 42, 0.34);
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 7;
   stroke-linejoin: round;
 }
 
-.hero-star-face {
-  fill: rgba(245, 248, 255, 0.92);
-  stroke: rgba(255, 255, 255, 0.94);
-  stroke-width: 2.5;
+.hero-star-facet {
+  stroke: rgba(255, 244, 184, 0.16);
+  stroke-width: 0.4;
+  stroke-linejoin: round;
+}
+
+.hero-star-facet--light {
+  opacity: 1;
+}
+
+.hero-star-facet--mid {
+  opacity: 0.98;
+}
+
+.hero-star-facet--dark {
+  opacity: 0.96;
+}
+
+.hero-star-facet-lines {
+  fill: none;
+  stroke: rgba(34, 22, 4, 0.44);
+  stroke-width: 1.45;
+  stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .hero-star-edge {
   fill: none;
-  stroke: rgba(12, 20, 47, 0.68);
-  stroke-width: 2.2;
+  stroke: rgba(255, 255, 255, 0.98);
+  stroke-width: 2.6;
   stroke-linejoin: round;
 }
 
