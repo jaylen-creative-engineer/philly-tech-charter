@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import Pill from "../components/Pill";
+import { CharterIcon } from "../components/CharterIcons";
 
 export default function ClosingCTA() {
   return (
@@ -20,6 +21,7 @@ export default function ClosingCTA() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.35 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10"
       >
         <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[var(--color-red)] mb-8">
           Version 1.1 is unwritten
@@ -36,8 +38,14 @@ export default function ClosingCTA() {
           Two hundred fifty years from now, someone will read what this generation chose to write. Add your voice while the ink is still wet.
         </p>
         <div className="flex items-center justify-center gap-4 max-md:flex-col">
-          <Pill variant="red" href="/contribute">Contribute to the Document</Pill>
-          <Pill variant="outline" href="/contribute">Sign the Charter</Pill>
+          <Pill variant="red" href="/contribute">
+            <CharterIcon name="voice" size={14} />
+            Contribute to the Document
+          </Pill>
+          <Pill variant="outline" href="/contribute">
+            <CharterIcon name="signature" size={14} />
+            Sign the Charter
+          </Pill>
         </div>
       </motion.div>
     </section>

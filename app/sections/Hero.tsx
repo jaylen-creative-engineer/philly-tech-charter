@@ -1,4 +1,5 @@
 import Pill from "../components/Pill";
+import { CharterIcon } from "../components/CharterIcons";
 
 export default function Hero() {
   return (
@@ -50,8 +51,10 @@ export default function Hero() {
           <div className="animate-rise-4 mt-10 flex items-center justify-center gap-4 max-md:flex-col">
             <Pill variant="red" href="#document">
               Read the Charter
+              <CharterIcon name="chevron-right" size={14} />
             </Pill>
             <Pill variant="outline" href="/contribute">
+              <CharterIcon name="voice" size={14} />
               Participate
             </Pill>
           </div>

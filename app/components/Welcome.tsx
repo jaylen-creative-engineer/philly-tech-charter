@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CharterIcon } from "./CharterIcons";
 
 interface Props {
   onComplete: () => void;
@@ -81,7 +82,6 @@ export default function Welcome({ onComplete }: Props) {
         className={`${panel} ${lift} z-[2] welcome-surface overflow-hidden border-b border-[var(--color-rule-light)]`}
       >
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-8 text-center">
-          {/* Era line — matches nav */}
           <div className="welcome-animate-rise-1">
             <span className="welcome-era" aria-label={`1776 to ${CURRENT_YEAR}`}>
               <span className="welcome-era-year">1776</span>
@@ -110,14 +110,14 @@ export default function Welcome({ onComplete }: Props) {
 
           <button
             type="button"
-            className="welcome-animate-rise-4 welcome-enter-btn mt-12 px-10 py-3.5 font-display text-[11px] uppercase tracking-[0.14em] pointer-events-none"
+            className="welcome-animate-rise-4 welcome-enter-btn mt-12 inline-flex items-center gap-2 px-10 py-3.5 font-display text-[11px] uppercase tracking-[0.14em] pointer-events-none"
             tabIndex={-1}
           >
             Enter the Charter
+            <CharterIcon name="chevron-right" size={14} />
           </button>
         </div>
 
-        {/* Bottom accent */}
         <div className="absolute inset-x-0 bottom-0 flex h-[3px]" aria-hidden="true">
           <div className="flex-[2] bg-[var(--color-red)]" />
           <div className="flex-1 bg-[var(--color-white)]" />
