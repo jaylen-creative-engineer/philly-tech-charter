@@ -2,7 +2,6 @@
 
 import { motion } from "motion/react";
 import Pill from "../components/Pill";
-import ImagePlaceholder from "../components/ImagePlaceholder";
 import { CharterIcon } from "../components/CharterIcons";
 
 export default function ClosingCTA() {
@@ -24,14 +23,6 @@ export default function ClosingCTA() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10"
       >
-        <div className="mx-auto mb-10 grid max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-6 max-md:grid-cols-1 max-md:gap-4">
-          <ImagePlaceholder variant="history" aspect="square" className="max-md:hidden shadow-lg" aria-hidden="true" />
-          <span className="icon-badge mx-auto h-16 w-16 text-[var(--color-red)]">
-            <CharterIcon name="pen" size={32} />
-          </span>
-          <ImagePlaceholder variant="signature" aspect="square" className="max-md:hidden shadow-lg" aria-hidden="true" />
-        </div>
-
         <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[var(--color-red)] mb-8">
           Version 1.1 is unwritten
         </p>

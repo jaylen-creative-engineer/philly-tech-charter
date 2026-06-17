@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import WelcomeCarousel from "./WelcomeCarousel";
 import { CharterIcon } from "./CharterIcons";
 
 interface Props {
@@ -82,9 +81,6 @@ export default function Welcome({ onComplete }: Props) {
       <div
         className={`${panel} ${lift} z-[2] welcome-surface overflow-hidden border-b border-[var(--color-rule-light)]`}
       >
-        {/* Deepest layer — city portrait panels behind the civic entry surface */}
-        <WelcomeCarousel />
-
         <div className="relative z-10 flex h-full flex-col items-center justify-center px-8 text-center">
           <div className="welcome-animate-rise-1">
             <span className="welcome-era" aria-label={`1776 to ${CURRENT_YEAR}`}>
@@ -122,7 +118,7 @@ export default function Welcome({ onComplete }: Props) {
           </button>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 z-10 flex h-[3px]" aria-hidden="true">
+        <div className="absolute inset-x-0 bottom-0 flex h-[3px]" aria-hidden="true">
           <div className="flex-[2] bg-[var(--color-red)]" />
           <div className="flex-1 bg-[var(--color-white)]" />
           <div className="flex-[2] bg-[var(--color-blue)]" />
