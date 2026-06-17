@@ -1,6 +1,16 @@
 import ScrollReveal from "../components/ScrollReveal";
 import BlueTexture from "../components/BlueTexture";
 import { PRINCIPLES } from "../../lib/data";
+import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
+
+const PRINCIPLE_ICONS: CharterIconName[] = [
+  "target",
+  "layers",
+  "culture",
+  "access",
+  "public",
+  "measure",
+];
 
 export default function Principles() {
   return (
@@ -32,9 +42,14 @@ export default function Principles() {
           {PRINCIPLES.map((p, i) => (
             <ScrollReveal key={p.num} delay={i * 60}>
               <div className="card-surface bg-[var(--color-cream)] p-9 h-full border-b-[6px] border-[var(--color-red)]">
-                <p className="font-display text-[26px] leading-none text-[var(--color-red)] mb-4">
-                  {p.num}
-                </p>
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <span className="icon-badge h-11 w-11 text-[var(--color-blue)]">
+                    <CharterIcon name={PRINCIPLE_ICONS[i]} size={22} />
+                  </span>
+                  <p className="font-display text-[26px] leading-none text-[var(--color-red)]">
+                    {p.num}
+                  </p>
+                </div>
                 <h3 className="font-display text-[18px] leading-[1.25] text-[var(--color-blue)] mb-3.5">
                   {p.title}
                 </h3>

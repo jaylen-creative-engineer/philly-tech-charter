@@ -735,6 +735,70 @@ main[data-entered="false"] [class*=" animate-"] {
   overflow: hidden;
 }
 
+.image-placeholder-grain {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-rule-light);
+  background: var(--color-paper);
+}
+
+/* ── Welcome carousel panels (deepest layer) ── */
+
+.welcome-carousel-panel {
+  position: absolute;
+  top: 12%;
+  bottom: 12%;
+  width: min(18vw, 168px);
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 2px solid color-mix(in srgb, var(--color-cream) 22%, transparent);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.welcome-carousel-panel--left {
+  left: max(1.25rem, 3vw);
+}
+
+.welcome-carousel-panel--right {
+  right: max(1.25rem, 3vw);
+}
+
+.welcome-carousel-panel-inner--left {
+  animation: welcomePanelDriftLeft 22s ease-in-out infinite alternate;
+}
+
+.welcome-carousel-panel-inner--right {
+  animation: welcomePanelDriftRight 22s ease-in-out infinite alternate;
+}
+
+@keyframes welcomePanelDriftLeft {
+  from { transform: scale(1.06) translate3d(0, 0, 0); }
+  to   { transform: scale(1.12) translate3d(2%, -1.5%, 0); }
+}
+
+@keyframes welcomePanelDriftRight {
+  from { transform: scale(1.06) translate3d(0, 0, 0); }
+  to   { transform: scale(1.12) translate3d(-2%, -1.5%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-carousel-panel-inner--left,
+  .welcome-carousel-panel-inner--right {
+    animation: none;
+  }
+}
+
 .preview-card {
   border: 2px solid var(--color-rule-light);
   border-top: 5px solid var(--color-blue);

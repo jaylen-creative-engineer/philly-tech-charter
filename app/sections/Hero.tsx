@@ -2,6 +2,7 @@ import Pill from "../components/Pill";
 import BlueTexture from "../components/BlueTexture";
 import IndependenceHall from "../components/IndependenceHall";
 import FlagWaves from "../components/FlagWaves";
+import { CharterIcon } from "../components/CharterIcons";
 
 export default function Hero() {
   return (
@@ -57,8 +58,14 @@ export default function Hero() {
 
           {/* Calls to action */}
           <div className="animate-rise-4 mt-8 flex items-center justify-center gap-4 max-md:mt-6 max-md:flex-col">
-            <Pill variant="red" href="#document">Read the Charter</Pill>
-            <Pill variant="cream" href="/contribute">Participate</Pill>
+            <Pill variant="red" href="#document">
+              Read the Charter
+              <CharterIcon name="chevron-right" size={14} />
+            </Pill>
+            <Pill variant="cream" href="/contribute">
+              <CharterIcon name="voice" size={14} />
+              Participate
+            </Pill>
           </div>
         </div>
 

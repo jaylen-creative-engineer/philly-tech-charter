@@ -4,30 +4,36 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import BlueTexture from "../components/BlueTexture";
 import Pill from "../components/Pill";
 import SectionLabel from "../components/SectionLabel";
+import ImagePlaceholder from "../components/ImagePlaceholder";
+import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
 import { Contribution, ContributionType, Signatory } from "../../lib/types";
 
 type ContributionKind = "signature" | "principle" | "other";
 
-const OTHER_TYPES: { type: ContributionType; short: string; hint: string }[] = [
+const OTHER_TYPES: { type: ContributionType; short: string; hint: string; icon: CharterIconName }[] = [
   {
     type: "A refinement to existing text",
     short: "Refinement",
     hint: "Sharpen language that is already in the charter.",
+    icon: "refinement",
   },
   {
     type: "A challenge or counterpoint",
     short: "Challenge",
     hint: "Name a tension, disagreement, or missing perspective.",
+    icon: "challenge",
   },
   {
     type: "A real-world example or evidence",
     short: "Evidence",
     hint: "Ground the document in lived practice or local proof.",
+    icon: "evidence",
   },
   {
     type: "A question the document doesn't answer",
     short: "Question",
     hint: "Ask what the next version needs to wrestle with.",
+    icon: "question",
   },
 ];
 
@@ -36,6 +42,7 @@ const KIND_OPTIONS: {
   label: string;
   description: string;
   eyebrow: string;
+  icon: CharterIconName;
   previewPrompt: string;
   detailsPrompt: string;
   submitLabel: string;
@@ -45,6 +52,7 @@ const KIND_OPTIONS: {
     label: "Signature",
     description: "Add your name to the public record of people standing with the charter.",
     eyebrow: "Stand with it",
+    icon: "signature",
     previewPrompt: "Good. Your signature is a public mark of support. Here is how it can appear.",
     detailsPrompt: "What name should the charter carry forward?",
     submitLabel: "Add my signature",
@@ -54,6 +62,7 @@ const KIND_OPTIONS: {
     label: "Principle",
     description: "Propose a guiding commitment for the next version of the document.",
     eyebrow: "Shape v1.1",
+    icon: "principle",
     previewPrompt: "Good. A principle should feel clear enough to remember and strong enough to test.",
     detailsPrompt: "What principle do you want future readers to consider?",
     submitLabel: "Submit this principle",
@@ -63,6 +72,7 @@ const KIND_OPTIONS: {
     label: "Other contribution",
     description: "Offer a refinement, challenge, question, example, or piece of evidence.",
     eyebrow: "Add context",
+    icon: "voice",
     previewPrompt: "Good. Context helps the charter get sharper, more honest, and more useful.",
     detailsPrompt: "What should the next version make room for?",
     submitLabel: "Submit this contribution",
@@ -508,7 +518,14 @@ export default function ContributionExperience() {
       <BlueTexture variant="hero" />
       <div className="relative z-10 mx-auto max-w-[980px]">
         <div className="mb-12 text-center">
-          <SectionLabel color="cream">Participate</SectionLabel>
+          <SectionLabel color="cream" icon={<CharterIcon name="voice" size={18} />}>
+            Participate
+          </SectionLabel>
+          <div className="mx-auto mb-8 grid max-w-2xl grid-cols-3 gap-3 max-md:max-w-xs max-md:grid-cols-1">
+            <ImagePlaceholder variant="liberty" aspect="square" className="max-md:hidden" aria-hidden="true" />
+            <ImagePlaceholder variant="signature" aspect="square" label="Your voice" className="shadow-lg" />
+            <ImagePlaceholder variant="document" aspect="square" className="max-md:hidden" aria-hidden="true" />
+          </div>
           <h1
             className="font-display mx-auto mb-5 max-w-4xl leading-[0.98] tracking-[-0.02em]"
             style={{ fontSize: "clamp(42px, 7vw, 92px)" }}
@@ -539,8 +556,11 @@ export default function ContributionExperience() {
               className="card-surface mb-6 bg-[var(--color-cream)] px-8 py-10 text-[var(--color-blue)]"
               style={{ animation: `riseIn ${CONVERSATION_PACE.cardRevealDuration}s ease forwards` }}
             >
-              <span className="mb-4 block text-3xl text-[var(--color-gold)]" aria-hidden="true">
-                {success.kind === "signature" ? "★" : "✦"}
+              <span className="mb-4 inline-flex text-[var(--color-gold)]" aria-hidden="true">
+                <CharterIcon
+                  name={success.kind === "signature" ? "star" : "principle"}
+                  size={36}
+                />
               </span>
               <p className="font-display mb-2 text-[20px]">{success.title}</p>
               <p className="text-[14px] leading-[1.7] text-[var(--color-mute)]">{success.message}</p>
@@ -611,6 +631,9 @@ export default function ContributionExperience() {
                       className="type-card cursor-pointer p-4 text-left"
                       onClick={() => handleKindSelect(option.kind)}
                     >
+                      <span className="icon-badge mb-3 h-9 w-9 text-[var(--color-red)]">
+                        <CharterIcon name={option.icon} size={18} />
+                      </span>
                       <p className="font-display mb-2 text-[9px] uppercase tracking-[0.2em] text-[var(--color-red)]">
                         {option.eyebrow}
                       </p>
@@ -691,6 +714,9 @@ export default function ContributionExperience() {
                         className="type-card cursor-pointer p-3 text-left"
                         onClick={() => setOtherType(option.type)}
                       >
+                        <span className="icon-badge mb-2 h-8 w-8 text-[var(--color-blue)]">
+                          <CharterIcon name={option.icon} size={16} />
+                        </span>
                         <p className="font-display mb-1 text-[10px] uppercase tracking-[0.08em] text-[var(--color-blue)]">
                           {option.short}
                         </p>
@@ -787,8 +813,8 @@ function ContributionCard({
     return (
       <div>
         <div className="mb-6 flex items-start gap-3">
-          <span className="shrink-0 text-lg text-[var(--color-gold)]" aria-hidden="true">
-            ★
+          <span className="icon-badge shrink-0 h-10 w-10 text-[var(--color-gold)]">
+            <CharterIcon name="star" size={20} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">

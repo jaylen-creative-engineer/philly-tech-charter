@@ -2,6 +2,8 @@
 
 import { motion } from "motion/react";
 import Pill from "../components/Pill";
+import ImagePlaceholder from "../components/ImagePlaceholder";
+import { CharterIcon } from "../components/CharterIcons";
 
 export default function ClosingCTA() {
   return (
@@ -20,7 +22,16 @@ export default function ClosingCTA() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.35 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10"
       >
+        <div className="mx-auto mb-10 grid max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-6 max-md:grid-cols-1 max-md:gap-4">
+          <ImagePlaceholder variant="history" aspect="square" className="max-md:hidden shadow-lg" aria-hidden="true" />
+          <span className="icon-badge mx-auto h-16 w-16 text-[var(--color-red)]">
+            <CharterIcon name="pen" size={32} />
+          </span>
+          <ImagePlaceholder variant="signature" aspect="square" className="max-md:hidden shadow-lg" aria-hidden="true" />
+        </div>
+
         <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[var(--color-red)] mb-8">
           Version 1.1 is unwritten
         </p>
@@ -36,8 +47,14 @@ export default function ClosingCTA() {
           Two hundred fifty years from now, someone will read what this generation chose to write. Add your voice while the ink is still wet.
         </p>
         <div className="flex items-center justify-center gap-4 max-md:flex-col">
-          <Pill variant="red" href="/contribute">Contribute to the Document</Pill>
-          <Pill variant="outline" href="/contribute">Sign the Charter</Pill>
+          <Pill variant="red" href="/contribute">
+            <CharterIcon name="voice" size={14} />
+            Contribute to the Document
+          </Pill>
+          <Pill variant="outline" href="/contribute">
+            <CharterIcon name="signature" size={14} />
+            Sign the Charter
+          </Pill>
         </div>
       </motion.div>
     </section>

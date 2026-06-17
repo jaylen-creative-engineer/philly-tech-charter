@@ -2,23 +2,28 @@ import Link from "next/link";
 import ScrollReveal from "../components/ScrollReveal";
 import SectionLabel from "../components/SectionLabel";
 import Pill from "../components/Pill";
+import ImagePlaceholder from "../components/ImagePlaceholder";
+import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
 
 const PATHS = [
   {
     kind: "signature",
     label: "Signature",
+    icon: "signature" as CharterIconName,
     title: "Stand with the charter.",
     body: "Add your name to the public record of people who believe this work should move forward.",
   },
   {
     kind: "principle",
     label: "Principle",
+    icon: "principle" as CharterIconName,
     title: "Write a commitment.",
     body: "Propose a guiding idea that could shape the next version of the declaration.",
   },
   {
     kind: "other",
     label: "Other",
+    icon: "voice" as CharterIconName,
     title: "Add context.",
     body: "Offer a refinement, challenge, question, example, or piece of evidence for v1.1.",
   },
@@ -29,7 +34,9 @@ export default function Contribute() {
     <section id="contribute" className="py-[120px] px-12 max-w-[1100px] mx-auto max-md:px-6">
       <div className="text-center mb-14">
         <ScrollReveal>
-          <SectionLabel>Add Your Voice</SectionLabel>
+          <SectionLabel icon={<CharterIcon name="voice" size={18} />}>
+            Add Your Voice
+          </SectionLabel>
         </ScrollReveal>
 
         <ScrollReveal delay={80}>
@@ -49,6 +56,15 @@ export default function Contribute() {
         </ScrollReveal>
       </div>
 
+      <ScrollReveal delay={140}>
+        <ImagePlaceholder
+          variant="community"
+          aspect="wide"
+          label="Community · Participation"
+          className="mb-8 shadow-[0_12px_40px_rgba(224,46,53,0.1)] max-md:aspect-[16/9]"
+        />
+      </ScrollReveal>
+
       <ScrollReveal delay={160}>
         <div className="card-surface border-[3px] border-[var(--color-blue)] bg-[var(--color-paper)] p-8 text-left max-md:p-6">
           <div className="grid gap-3 md:grid-cols-3">
@@ -58,6 +74,9 @@ export default function Contribute() {
                 href={`/contribute?kind=${path.kind}`}
                 className="type-card block p-5 text-left no-underline"
               >
+                <span className="icon-badge mb-4 h-10 w-10 text-[var(--color-red)]">
+                  <CharterIcon name={path.icon} size={20} />
+                </span>
                 <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
                   {path.label}
                 </p>
@@ -77,6 +96,7 @@ export default function Contribute() {
               and confirm when it has been submitted.
             </p>
             <Pill variant="red" href="/contribute">
+              <CharterIcon name="pen" size={14} />
               Start contributing
             </Pill>
           </div>

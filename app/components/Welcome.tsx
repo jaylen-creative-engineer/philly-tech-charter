@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Fireworks from "./Fireworks";
 import BlueTexture from "./BlueTexture";
+import WelcomeCarousel from "./WelcomeCarousel";
+import { CharterIcon } from "./CharterIcons";
 
 interface Props {
   onComplete: () => void;
@@ -78,20 +80,23 @@ export default function Welcome({ onComplete }: Props) {
       <div className={`${panel} ${lift} z-[1] bg-[var(--color-red)]`} style={{ transitionDelay: exiting ? "240ms" : "0ms" }} />
       <div className={`${panel} ${lift} z-[2] bg-[var(--color-cream)]`} style={{ transitionDelay: exiting ? "120ms" : "0ms" }} />
       <div className={`${panel} ${lift} z-[3] bg-[var(--color-blue)] overflow-hidden`}>
+        {/* Deepest layer — city portrait panels cycle behind everything else */}
+        <WelcomeCarousel />
+
         <BlueTexture variant="hero" />
         <Fireworks active={!exiting} />
 
-        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-8">
-          <div className="welcome-animate-rise-1 flex items-center gap-4 mb-10">
+        <div className="relative z-10 flex h-full flex-col items-center justify-center px-8 text-center">
+          <div className="welcome-animate-rise-1 mb-10 flex items-center gap-4">
             <span className="font-display text-[clamp(28px,5vw,48px)] text-[var(--color-cream)]/40 tabular-nums">
               1776
             </span>
             <div className="flex flex-col items-center gap-1">
-              <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent" />
-              <span className="animate-star-pop text-[var(--color-gold)] text-[32px] leading-none select-none animate-glow-pulse rounded-full" aria-hidden="true">
-                ★
+              <div className="h-[2px] w-16 bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent" />
+              <span className="animate-star-pop animate-glow-pulse rounded-full text-[var(--color-gold)] leading-none select-none" aria-hidden="true">
+                <CharterIcon name="star" size={32} />
               </span>
-              <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent" />
+              <div className="h-[2px] w-16 bg-gradient-to-r from-transparent via-[var(--color-gold)] to-transparent" />
             </div>
             <span
               className="welcome-year-end font-display text-[clamp(28px,5vw,48px)] tabular-nums"
@@ -102,7 +107,7 @@ export default function Welcome({ onComplete }: Props) {
           </div>
 
           <h1
-            className="welcome-animate-rise-2 font-display leading-[0.95] text-[var(--color-cream)] max-w-4xl tracking-tight"
+            className="welcome-animate-rise-2 font-display max-w-4xl leading-[0.95] tracking-tight text-[var(--color-cream)]"
             style={{ fontSize: "clamp(40px, 8vw, 88px)" }}
           >
             Living
@@ -112,16 +117,17 @@ export default function Welcome({ onComplete }: Props) {
             History
           </h1>
 
-          <p className="welcome-animate-rise-3 font-display uppercase tracking-[0.35em] text-[10px] text-[var(--color-cream)]/50 mt-8">
+          <p className="welcome-animate-rise-3 mt-8 font-display text-[10px] uppercase tracking-[0.35em] text-[var(--color-cream)]/50">
             Philadelphia · America&apos;s 250th
           </p>
 
           <button
             type="button"
-            className="welcome-animate-rise-4 welcome-enter-btn mt-12 font-display uppercase tracking-[0.2em] text-[11px] text-[var(--color-cream)] border-2 border-[var(--color-cream)]/30 px-10 py-4 hover:border-[var(--color-gold)] hover:text-[var(--color-gold)] transition-colors duration-300 pointer-events-none"
+            className="welcome-animate-rise-4 welcome-enter-btn pointer-events-none mt-12 inline-flex items-center gap-2 border-2 border-[var(--color-cream)]/30 px-10 py-4 font-display text-[11px] uppercase tracking-[0.2em] text-[var(--color-cream)] transition-colors duration-300 hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
             tabIndex={-1}
           >
-            Enter the Charter →
+            Enter the Charter
+            <CharterIcon name="chevron-right" size={14} />
           </button>
         </div>
       </div>
