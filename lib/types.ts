@@ -15,6 +15,12 @@ export interface Signatory {
   createdAt: string;
 }
 
+export interface SubmissionPayload {
+  email?: string;
+  /** Links a contribution to an existing signature when attribution name is omitted. */
+  signatoryNameKey?: string;
+}
+
 export type ContributionType =
   | "A new principle"
   | "A refinement to existing text"

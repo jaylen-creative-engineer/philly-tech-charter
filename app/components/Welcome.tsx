@@ -100,7 +100,7 @@ export default function Welcome({ onComplete }: Props) {
           </h1>
 
           <p className="welcome-animate-rise-3 mt-8 max-w-md text-[15px] leading-[1.7] text-[var(--color-mute)]">
-            A living document for how this city shapes technology — written in the
+            A living document for how this city shapes technology, written in the
             tradition of those who first put their intentions to paper here.
           </p>
 

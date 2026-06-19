@@ -3,10 +3,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import BlueTexture from "../components/BlueTexture";
 import Pill from "../components/Pill";
-import SectionLabel from "../components/SectionLabel";
-import ImagePlaceholder from "../components/ImagePlaceholder";
 import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
 import { Contribution, ContributionType, Signatory } from "../../lib/types";
+import {
+  readParticipantProfile,
+  resolveParticipantAttribution,
+  saveParticipantProfile,
+} from "../../lib/participant-profile";
+import { normalizeSignatoryName } from "../../lib/supabase";
+import { markCharterDataStale } from "../../lib/useCharterData";
 
 type ContributionKind = "signature" | "principle" | "other";
 
@@ -83,7 +88,7 @@ const cardInputTitle =
   "w-full bg-transparent border-0 border-b border-transparent text-[20px] font-semibold leading-tight text-[var(--color-blue)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mb-1";
 
 const cardInputContext =
-  "w-full bg-transparent border-0 border-b border-transparent text-[12px] text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mt-1";
+  "w-full bg-transparent border-0 border-b border-transparent text-[16px] text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mt-1";
 
 const cardInputPrincipleTitle =
   "w-full bg-transparent border-0 border-b border-transparent font-display text-[13px] uppercase tracking-[0.08em] text-[var(--color-blue)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mb-3";
@@ -92,7 +97,7 @@ const cardTextarea =
   "w-full bg-transparent border-0 text-[16px] font-medium leading-[1.7] text-[var(--color-ink)] outline-none resize-none min-h-[96px] placeholder:text-[var(--color-mute)]/45 p-0 mb-5";
 
 const cardAttributionInput =
-  "w-full bg-transparent border-0 border-b border-transparent text-[12px] font-medium text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0";
+  "w-full bg-transparent border-0 border-b border-transparent text-[16px] font-medium text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0";
 
 const CONVERSATION_PACE = {
   typewriterWelcome: 42,
@@ -122,13 +127,14 @@ interface ConsoleStateInput {
   context: string;
   principleTitle: string;
   text: string;
+  email: string;
 }
 
 function getKindLabel(kind: ContributionKind | "") {
   return KIND_OPTIONS.find((option) => option.kind === kind)?.label ?? "Choose a path";
 }
 
-function getConsoleText({ kind, name, context, principleTitle, text }: ConsoleStateInput) {
+function getConsoleText({ kind, name, context, principleTitle, text, email }: ConsoleStateInput) {
   if (!kind) {
     return "Awaiting your first answer. Choose signature, principle, or another contribution path.";
   }
@@ -140,6 +146,10 @@ function getConsoleText({ kind, name, context, principleTitle, text }: ConsoleSt
 
     if (!context.trim()) {
       return "Name received. Add optional city or role context, or submit the signature.";
+    }
+
+    if (email.trim()) {
+      return "Almost there. Review your signature and submit when it feels right.";
     }
 
     return "Signature card is ready. Review it below, then add your name to the record.";
@@ -154,11 +164,27 @@ function getConsoleText({ kind, name, context, principleTitle, text }: ConsoleSt
       return "Title received. Now write the principle body in one to three sentences.";
     }
 
+    if (!name.trim()) {
+      return "Principle draft is ready. Add your name before submitting.";
+    }
+
+    if (email.trim()) {
+      return "Almost there. Review your principle and submit when it feels right.";
+    }
+
     return "Principle draft is live. Edit the card below, then submit it for v1.1.";
   }
 
   if (!text.trim()) {
     return "Contribution path open. Choose a type, then write the perspective this charter needs.";
+  }
+
+  if (!name.trim()) {
+    return "Contribution draft is ready. Add your name before submitting.";
+  }
+
+  if (email.trim()) {
+    return "Almost there. Review your contribution and submit when it feels right.";
   }
 
   return "Contribution draft is live. Edit the card below, then submit it to the public record.";
@@ -315,6 +341,7 @@ export default function ContributionExperience() {
   const [context, setContext] = useState("");
   const [principleTitle, setPrincipleTitle] = useState("");
   const [text, setText] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessState | null>(null);
@@ -340,6 +367,7 @@ export default function ContributionExperience() {
     context,
     principleTitle,
     text,
+    email,
   });
 
   const showGuidanceSection = hasSelectedKind;
@@ -391,6 +419,17 @@ export default function ContributionExperience() {
     }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseAfterWelcome);
   }
 
+  function applyParticipantProfileToForm() {
+    const profile = readParticipantProfile();
+    if (!profile) return;
+
+    setName((current) => current.trim() || profile.name);
+    setContext((current) => current.trim() || profile.context);
+    if (profile.email) {
+      setEmail((current) => current.trim() || profile.email || "");
+    }
+  }
+
   function handleKindSelect(nextKind: ContributionKind) {
     setKind(nextKind);
     setError("");
@@ -402,6 +441,49 @@ export default function ContributionExperience() {
       setPrincipleTitle("");
       setText("");
     }
+
+    applyParticipantProfileToForm();
+  }
+
+  function startPrincipleFlow() {
+    const profile = readParticipantProfile();
+
+    setSuccess(null);
+    setError("");
+    setLoading(false);
+    setKind("principle");
+    setOtherType(OTHER_TYPES[0].type);
+    setPrincipleTitle("");
+    setText("");
+    setName(profile?.name ?? "");
+    setContext(profile?.context ?? "");
+    setEmail(profile?.email ?? "");
+    setPreviewPromptComplete(false);
+    setDetailsPromptComplete(false);
+    setActiveTypewriter("preview-prompt");
+    setWelcomeComplete(true);
+    setWelcomeHeadlineComplete(true);
+    setFirstQuestionComplete(true);
+  }
+
+  function startSignatureFlow() {
+    const profile = readParticipantProfile();
+
+    setSuccess(null);
+    setError("");
+    setLoading(false);
+    setKind("signature");
+    setPrincipleTitle("");
+    setText("");
+    setName(profile?.name ?? "");
+    setContext(profile?.context ?? "");
+    setEmail(profile?.email ?? "");
+    setPreviewPromptComplete(false);
+    setDetailsPromptComplete(false);
+    setActiveTypewriter("preview-prompt");
+    setWelcomeComplete(true);
+    setWelcomeHeadlineComplete(true);
+    setFirstQuestionComplete(true);
   }
 
   function resetForm() {
@@ -411,6 +493,7 @@ export default function ContributionExperience() {
     setContext("");
     setPrincipleTitle("");
     setText("");
+    setEmail("");
     setError("");
     setLoading(false);
     setSuccess(null);
@@ -422,12 +505,36 @@ export default function ContributionExperience() {
     setActiveTypewriter("first-question");
   }
 
+  function resetSameKind() {
+    const currentKind = success?.kind ?? kind;
+    if (!currentKind) {
+      resetForm();
+      return;
+    }
+
+    setName("");
+    setContext("");
+    setPrincipleTitle("");
+    setText("");
+    setEmail("");
+    setError("");
+    setLoading(false);
+    setSuccess(null);
+    setPreviewPromptComplete(true);
+    setDetailsPromptComplete(true);
+    setWelcomeComplete(true);
+    setWelcomeHeadlineComplete(true);
+    setFirstQuestionComplete(true);
+    setKind(currentKind);
+    setActiveTypewriter(null);
+  }
+
   function validate() {
     if (!kind) {
       return "Choose the kind of contribution you want to make.";
     }
-    if (isSignature && !name.trim()) {
-      return "Please enter your name to sign the charter.";
+    if (!name.trim()) {
+      return "Your name is required.";
     }
     if (isPrinciple && !principleTitle.trim()) {
       return "Please give your principle a title.";
@@ -435,40 +542,76 @@ export default function ContributionExperience() {
     if (!isSignature && !contributionText) {
       return "Please write the contribution you want to add.";
     }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return "Please enter a valid email address, or leave it blank.";
+    }
     return "";
   }
 
+  async function postJson(url: string, payload: unknown) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      throw new Error(data?.error ?? "We could not save that yet. Please try again in a moment.");
+    }
+  }
+
   async function submitSignature() {
-    const signatory: Signatory = {
+    const signatory: Signatory & { email?: string } = {
       id: `sig-${Date.now()}`,
       name: name.trim(),
       context: context.trim(),
       createdAt: new Date().toISOString(),
     };
 
-    await fetch("/api/signatories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(signatory),
-    }).catch(() => {});
+    if (email.trim()) {
+      signatory.email = email.trim();
+    }
+
+    await postJson("/api/signatories", signatory);
   }
 
   async function submitContribution() {
-    const contribution: Contribution = {
+    const attribution = resolveParticipantAttribution(name, context);
+    const profile = readParticipantProfile();
+    const signatoryNameKey = profile?.name
+      ? normalizeSignatoryName(profile.name)
+      : attribution.name
+        ? normalizeSignatoryName(attribution.name)
+        : undefined;
+
+    const contribution: Contribution & { email?: string; signatoryNameKey?: string } = {
       id: `contrib-${Date.now()}`,
-      name: name.trim() || "Anonymous",
-      context: context.trim(),
+      name: attribution.name,
+      context: attribution.context,
       type: isPrinciple ? "A new principle" : otherType,
       text: contributionText,
       principleTitle: isPrinciple ? principleTitle.trim() : undefined,
       createdAt: new Date().toISOString(),
     };
 
-    await fetch("/api/contributions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(contribution),
-    }).catch(() => {});
+    if (signatoryNameKey) {
+      contribution.signatoryNameKey = signatoryNameKey;
+    }
+
+    if (email.trim()) {
+      contribution.email = email.trim();
+    }
+
+    if (contribution.name) {
+      saveParticipantProfile({
+        name: contribution.name,
+        context: contribution.context,
+        email: email.trim() || undefined,
+      });
+    }
+
+    await postJson("/api/contributions", contribution);
   }
 
   async function handleSubmit() {
@@ -484,6 +627,12 @@ export default function ContributionExperience() {
     try {
       if (isSignature) {
         await submitSignature();
+        saveParticipantProfile({
+          name: name.trim(),
+          context: context.trim(),
+          email: email.trim() || undefined,
+        });
+        markCharterDataStale();
         setSuccess({
           kind: "signature",
           title: "Your name has been added.",
@@ -493,6 +642,7 @@ export default function ContributionExperience() {
         });
       } else {
         await submitContribution();
+        markCharterDataStale();
         setSuccess({
           kind: isPrinciple ? "principle" : "other",
           title: isPrinciple ? "Your principle has been added." : "Your contribution has been added.",
@@ -506,8 +656,13 @@ export default function ContributionExperience() {
       setContext("");
       setPrincipleTitle("");
       setText("");
-    } catch {
-      setError("We could not save that yet. Please try again in a moment.");
+      setEmail("");
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "We could not save that yet. Please try again in a moment.",
+      );
     } finally {
       setLoading(false);
     }
@@ -517,15 +672,7 @@ export default function ContributionExperience() {
     <section className="blue-surface min-h-screen px-6 pb-24 pt-28 text-[var(--color-cream)]">
       <BlueTexture variant="hero" />
       <div className="relative z-10 mx-auto max-w-[980px]">
-        <div className="mb-12 text-center">
-          <SectionLabel color="cream" icon={<CharterIcon name="voice" size={18} />}>
-            Participate
-          </SectionLabel>
-          <div className="mx-auto mb-8 grid max-w-2xl grid-cols-3 gap-3 max-md:max-w-xs max-md:grid-cols-1">
-            <ImagePlaceholder variant="liberty" aspect="square" className="max-md:hidden" aria-hidden="true" />
-            <ImagePlaceholder variant="signature" aspect="square" label="Your voice" className="shadow-lg" />
-            <ImagePlaceholder variant="document" aspect="square" className="max-md:hidden" aria-hidden="true" />
-          </div>
+        <div className="mb-12 mt-[30px] text-center">
           <h1
             className="font-display mx-auto mb-5 max-w-4xl leading-[0.98] tracking-[-0.02em]"
             style={{ fontSize: "clamp(42px, 7vw, 92px)" }}
@@ -569,8 +716,18 @@ export default function ContributionExperience() {
               <Pill variant="cream" href={success.href}>
                 {success.hrefLabel}
               </Pill>
-              <Pill variant="outline" onClick={resetForm} className="border-[var(--color-cream)] text-[var(--color-cream)] hover:bg-[var(--color-cream)] hover:text-[var(--color-blue)]">
-                Add another
+              {success.kind === "signature" && (
+                <Pill variant="outline-light" onClick={startPrincipleFlow}>
+                  Propose a principle
+                </Pill>
+              )}
+              {(success.kind === "principle" || success.kind === "other") && (
+                <Pill variant="outline-light" onClick={startSignatureFlow}>
+                  Sign the charter
+                </Pill>
+              )}
+              <Pill variant="outline-light" onClick={resetSameKind}>
+                {success.kind === "signature" ? "Add another signature" : "Add another"}
               </Pill>
             </div>
           </div>
@@ -764,6 +921,26 @@ export default function ContributionExperience() {
               )}
 
               <ConversationReveal visible={Boolean(showSubmit)} className="mt-8">
+                <div
+                  className="mb-6"
+                  style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}
+                >
+                  <label className="sr-only" htmlFor="contributor-email">
+                    Email for follow-up (optional)
+                  </label>
+                  <input
+                    id="contributor-email"
+                    className="w-full border-0 border-b border-[var(--color-rule-light)] bg-transparent px-0 py-2 text-[14px] text-[var(--color-ink)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45"
+                    type="email"
+                    placeholder="Email for follow-up (optional, never shown publicly)"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    autoComplete="email"
+                  />
+                  <p className="mt-2 text-[11px] leading-[1.5] text-[var(--color-mute)]">
+                    Share an email if you&apos;d like questions, context, or updates about v1.1.
+                  </p>
+                </div>
                 <Pill
                   variant="red"
                   onClick={handleSubmit}
@@ -827,10 +1004,11 @@ function ContributionCard({
               id="signature-name"
               className={cardInputTitle}
               type="text"
-              placeholder="Your name"
+              placeholder="Your name (required)"
               value={name}
               onChange={(event) => onNameChange(event.target.value)}
               autoComplete="name"
+              required
             />
             {showContext && (
               <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
@@ -903,10 +1081,11 @@ function ContributionCard({
               id="principle-name"
               className={`${cardAttributionInput} mb-2`}
               type="text"
-              placeholder="Your name"
+              placeholder="Your name (required)"
               value={name}
               onChange={(event) => onNameChange(event.target.value)}
               autoComplete="name"
+              required
             />
             <label className="sr-only" htmlFor="principle-context">
               City or role
@@ -961,10 +1140,11 @@ function ContributionCard({
               id="contribution-name"
               className={`${cardAttributionInput} mb-2`}
               type="text"
-              placeholder="Your name"
+              placeholder="Your name (required)"
               value={name}
               onChange={(event) => onNameChange(event.target.value)}
               autoComplete="name"
+              required
             />
             <label className="sr-only" htmlFor="contribution-context">
               City or role

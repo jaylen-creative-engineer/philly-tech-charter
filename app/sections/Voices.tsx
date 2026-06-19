@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { Contribution } from "../../lib/types";
+import { FetchStatus } from "../../lib/useCharterData";
 import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
+import { RecordEmpty, RecordError, RecordLoading } from "../components/RecordState";
 
 interface Props {
   contributions: Contribution[];
+  status: FetchStatus;
+  error: string;
+  onRetry: () => void;
 }
 
 type Tab = "all" | "principles";
@@ -50,11 +55,21 @@ function ContributionCard({ c }: { c: Contribution }) {
   );
 }
 
-export default function Voices({ contributions }: Props) {
+function emptyMessage(tab: Tab) {
+  if (tab === "principles") {
+    return "No proposed principles yet. Be the first to suggest one.";
+  }
+
+  return "No contributions yet. Be the first to add your voice.";
+}
+
+export default function Voices({ contributions, status, error, onRetry }: Props) {
   const [tab, setTab] = useState<Tab>("all");
 
   const principles = contributions.filter((c) => c.type === "A new principle");
   const displayed = tab === "principles" ? principles : contributions;
+  const countLabel =
+    status === "loading" ? "…" : `${contributions.length} contribution${contributions.length !== 1 ? "s" : ""}`;
 
   const tabBase =
     "font-display text-[10px] tracking-[0.15em] uppercase px-4 py-2.5 rounded-[var(--radius-md)] transition-colors duration-200 cursor-pointer border-2 inline-flex items-center gap-2";
@@ -76,15 +91,15 @@ export default function Voices({ contributions }: Props) {
           Voices
         </h2>
         <span className="font-display text-[11px] text-[var(--color-cream)] tracking-[0.1em] bg-[var(--color-red)] px-3 py-1">
-          {contributions.length} contribution{contributions.length !== 1 ? "s" : ""}
+          {countLabel}
         </span>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-10">
         <button
           className={`${tabBase} ${tab === "all" ? activeTab : inactiveTab}`}
           onClick={() => setTab("all")}
+          disabled={status === "loading"}
         >
           <CharterIcon name="voice" size={12} />
           All Voices
@@ -92,6 +107,7 @@ export default function Voices({ contributions }: Props) {
         <button
           className={`${tabBase} ${tab === "principles" ? activeTab : inactiveTab}`}
           onClick={() => setTab("principles")}
+          disabled={status === "loading"}
         >
           <CharterIcon name="principle" size={12} />
           Proposed Principles
@@ -101,12 +117,21 @@ export default function Voices({ contributions }: Props) {
         </button>
       </div>
 
-      {displayed.length === 0 ? (
-        <p className="text-[14px] text-[var(--color-mute)]">
-          No proposed principles yet. Be the first to suggest one.
-        </p>
+      {status === "loading" ? (
+        <RecordLoading label="Loading contributions from the public record…" />
+      ) : status === "error" ? (
+        <RecordError message={error} onRetry={onRetry} />
+      ) : displayed.length === 0 ? (
+        <RecordEmpty
+          message={emptyMessage(tab)}
+          href="/contribute"
+          hrefLabel="Add your voice"
+        />
       ) : (
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}>
+        <div
+          className="grid gap-3"
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" }}
+        >
           {displayed.map((c) => (
             <ContributionCard key={c.id} c={c} />
           ))}

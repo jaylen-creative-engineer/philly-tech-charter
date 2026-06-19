@@ -169,7 +169,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
         <Link
           href="/"
           className={`nav-brand ${onHero ? "nav-brand--hero" : "nav-brand--surface"}`}
-          aria-label="Philly Tech Charter — return to top"
+          aria-label="Philly Tech Charter, return to top"
           onClick={(e) => {
             if (window.location.pathname === "/") {
               e.preventDefault();

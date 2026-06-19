@@ -90,7 +90,7 @@ export default function Sign({ signatoryCount, onSign }: Props) {
 
           <ScrollReveal delay={120}>
             <p className="text-[16px] leading-[1.8] text-[var(--color-cream)]/80 max-w-[520px] mx-auto">
-              Your name becomes part of the record. Take a moment to shape how you appear — this is your mark on the charter.
+              Your name becomes part of the record. Take a moment to shape how you appear. This is your mark on the charter.
             </p>
             {signatoryCount > 0 && (
               <p className="font-display text-[12px] text-[var(--color-gold)] tracking-[0.05em] mt-4">
@@ -202,7 +202,7 @@ export default function Sign({ signatoryCount, onSign }: Props) {
 
                   <div className="border-t border-[var(--color-rule-light)] pt-4">
                     <p className="text-[12px] text-[var(--color-mute)] leading-[1.6]">
-                      This is a declaration of intent — your name joins a growing record of people who believe technology in Philadelphia should serve everyone.
+                      This is a declaration of intent. Your name joins a growing record of people who believe technology in Philadelphia should serve everyone.
                     </p>
                   </div>
                 </div>

@@ -19,11 +19,11 @@ const pinyonScript = Pinyon_Script({
 });
 
 export const metadata: Metadata = {
-  title: "Philadelphia Declaration — 250",
+  title: "Philadelphia Declaration 250",
   description:
-    "A living document written in Philadelphia on the occasion of America's 250th year — establishing a collective intention for how we integrate AI and technology with culture.",
+    "A living document written in Philadelphia on the occasion of America's 250th year, establishing a collective intention for how we integrate AI and technology with culture.",
   openGraph: {
-    title: "Philadelphia Declaration — 250",
+    title: "Philadelphia Declaration 250",
     description: "A gift to America. A design for what comes next.",
     type: "website",
   },

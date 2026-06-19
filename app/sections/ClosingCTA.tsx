@@ -24,18 +24,18 @@ export default function ClosingCTA() {
         className="relative z-10"
       >
         <p className="font-display text-[11px] tracking-[0.25em] uppercase text-[var(--color-red)] mb-8">
-          Version 1.1 is unwritten
+          Version 1.1 · Juneteenth Release
         </p>
         <h2
           className="font-display leading-[1.0] text-[var(--color-blue)] max-w-3xl mx-auto mb-8"
           style={{ fontSize: "clamp(36px, 5.5vw, 72px)" }}
         >
-          History is watching.
+          The document is alive.
           <br />
-          <span className="text-[var(--color-red)]">The pen is in your hand.</span>
+          <span className="text-[var(--color-red)]">Your voice can shape it.</span>
         </h2>
         <p className="text-[15px] leading-[1.8] text-[var(--color-ink)] max-w-[480px] mx-auto mb-12">
-          Two hundred fifty years from now, someone will read what this generation chose to write. Add your voice while the ink is still wet.
+          Sign, propose a principle, or add context. Every contribution is saved to the public record. Two hundred fifty years from now, someone will read what this generation chose to write.
         </p>
         <div className="flex items-center justify-center gap-4 max-md:flex-col">
           <Pill variant="red" href="/contribute">

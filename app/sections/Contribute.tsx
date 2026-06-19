@@ -1,8 +1,8 @@
 import Link from "next/link";
 import ScrollReveal from "../components/ScrollReveal";
 import SectionLabel from "../components/SectionLabel";
+import SectionPhoto from "../components/SectionPhoto";
 import Pill from "../components/Pill";
-import ImagePlaceholder from "../components/ImagePlaceholder";
 import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
 
 const PATHS = [
@@ -57,11 +57,15 @@ export default function Contribute() {
       </div>
 
       <ScrollReveal delay={140}>
-        <ImagePlaceholder
-          variant="community"
-          aspect="wide"
-          label="Community · Participation"
-          className="mb-8 shadow-[0_12px_40px_rgba(224,46,53,0.1)] max-md:aspect-[16/9]"
+        <SectionPhoto
+          src="/images/liberty-bell.png"
+          alt="The Liberty Bell in Independence Hall, Philadelphia, stereograph photograph, 1899"
+          aspect="stereograph"
+          fit="contain"
+          vintage
+          vintageScale={1}
+          sizes="(max-width: 768px) 100vw, 920px"
+          className="mx-auto mb-8 max-w-[920px] shadow-[0_12px_40px_rgba(224,46,53,0.1)]"
         />
       </ScrollReveal>
 

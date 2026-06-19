@@ -885,6 +885,23 @@ main[data-entered="false"] [class*=" animate-"] {
   box-shadow: var(--shadow-blue);
 }
 
+.pill-btn--outline-light {
+  color: var(--color-cream);
+  background: transparent;
+  border: 1.5px solid var(--color-cream);
+  box-shadow: none;
+}
+
+.pill-btn--outline-light:hover {
+  background: var(--color-cream);
+  color: var(--color-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+.blue-surface .pill-btn:focus-visible {
+  outline-color: var(--color-cream);
+}
+
 .pill-btn--ghost {
   color: var(--color-ink);
   background: transparent;

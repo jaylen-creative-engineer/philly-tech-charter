@@ -11,8 +11,7 @@ export default function Hero() {
         <div className="hero-inner">
           <div className="animate-rise-1">
             <span className="hero-badge">
-              <span className="hero-badge-dot" aria-hidden="true" />
-              Living Document · Version 1.0
+              Living Document · Version 1.1
             </span>
           </div>
 
@@ -44,7 +43,7 @@ export default function Hero() {
             Two hundred fifty years ago, people sat in this city and wrote down
             their intentions for a new world.{" "}
             <span className="font-medium text-[var(--color-blue)]">
-              This is a civic commitment to do it again — for technology, culture, and what comes next.
+              This is a civic commitment to do it again, for technology, culture, and what comes next.
             </span>
           </p>
 

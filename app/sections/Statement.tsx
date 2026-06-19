@@ -8,7 +8,7 @@ export default function Statement() {
           className="font-display leading-[1.15] text-[var(--color-cream)] max-w-4xl mx-auto"
           style={{ fontSize: "clamp(22px, 3.4vw, 46px)" }}
         >
-          &ldquo;AI is a tool for our collective growth. Culture is a tool for our collective growth. Both need to work as an integrated system — so we can solve the problems that sit at the core of the systems we all live inside.&rdquo;
+          &ldquo;AI is a tool for our collective growth. Culture is a tool for our collective growth. Both need to work as an integrated system so we can solve the problems that sit at the core of the systems we all live inside.&rdquo;
         </p>
       </div>
     </ScrollReveal>

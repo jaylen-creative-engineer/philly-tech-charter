@@ -41,10 +41,10 @@ Built on the Nike DESIGN.md reference with a custom dark-mode identity:
 - [x] Contribution form (in-session)
 - [x] Live voices section
 
-### v1.1 (next)
-- [ ] Backend for persistent contributions (Supabase or similar)
+### v1.1 (Juneteenth release)
+- [x] Backend for persistent contributions (Supabase)
+- [x] Email capture for contributors (private, insert-only)
 - [ ] Changelog / version history view
-- [ ] Email capture for contributors
 - [ ] Shareable anchor links per section/principle
 
 ### v2

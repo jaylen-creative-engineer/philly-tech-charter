@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
-  variant?: "red" | "blue" | "outline" | "cream" | "ghost";
+  variant?: "red" | "blue" | "outline" | "outline-light" | "cream" | "ghost";
   href?: string;
   onClick?: () => void;
   className?: string;

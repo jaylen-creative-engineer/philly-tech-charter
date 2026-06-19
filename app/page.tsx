@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useState } from "react";
 import Welcome from "./components/Welcome";
 import Nav from "./components/Nav";
 import Hero from "./sections/Hero";
@@ -13,35 +13,22 @@ import Voices from "./sections/Voices";
 import SignatoryWall from "./sections/SignatoryWall";
 import ClosingCTA from "./sections/ClosingCTA";
 import Footer from "./sections/Footer";
-import { Contribution, Signatory } from "../lib/types";
-import { SEED_CONTRIBUTIONS } from "../lib/data";
+import { useCharterData } from "../lib/useCharterData";
 
 export default function Home() {
-  const [contributions, setContributions] = useState<Contribution[]>(SEED_CONTRIBUTIONS);
-  const [signatories, setSignatories] = useState<Signatory[]>([]);
   const [entered, setEntered] = useState(false);
-
   const handleWelcomeComplete = useCallback(() => setEntered(true), []);
 
-  useEffect(() => {
-    fetch("/api/contributions")
-      .then((r) => r.json())
-      .then((data: Contribution[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setContributions(data);
-        }
-      })
-      .catch(() => {});
-
-    fetch("/api/signatories")
-      .then((r) => r.json())
-      .then((data: Signatory[]) => {
-        if (Array.isArray(data)) {
-          setSignatories(data);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const {
+    contributions,
+    signatories,
+    contributionsStatus,
+    signatoriesStatus,
+    contributionsError,
+    signatoriesError,
+    refreshContributions,
+    refreshSignatories,
+  } = useCharterData();
 
   return (
     <>
@@ -59,8 +46,18 @@ export default function Home() {
         <Document />
         <Principles />
         <Contribute />
-        <Voices contributions={contributions} />
-        <SignatoryWall signatories={signatories} />
+        <Voices
+          contributions={contributions}
+          status={contributionsStatus}
+          error={contributionsError}
+          onRetry={refreshContributions}
+        />
+        <SignatoryWall
+          signatories={signatories}
+          status={signatoriesStatus}
+          error={signatoriesError}
+          onRetry={refreshSignatories}
+        />
         <ClosingCTA />
         <Footer />
       </main>
