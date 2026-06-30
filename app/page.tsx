@@ -3,8 +3,8 @@
 import { useCallback, useState } from "react";
 import Welcome from "./components/Welcome";
 import Nav from "./components/Nav";
-import Hero from "./sections/Hero";
-import Intro from "./sections/Intro";
+import SmoothScroll from "./components/SmoothScroll";
+import HallJourney from "./components/hall/HallJourney";
 import Statement from "./sections/Statement";
 import Document from "./sections/Document";
 import Principles from "./sections/Principles";
@@ -33,34 +33,36 @@ export default function Home() {
   return (
     <>
       <Welcome onComplete={handleWelcomeComplete} />
-      <Nav visible={entered} />
-      <main data-entered={entered}>
-        <Hero />
-        <div aria-hidden="true" className="flex h-[3px]">
-          <div className="flex-[2] bg-[var(--color-red)]" />
-          <div className="flex-1 bg-[var(--color-white)]" />
-          <div className="flex-[2] bg-[var(--color-blue)]" />
-        </div>
-        <Intro />
-        <Statement />
-        <Document />
-        <Principles />
-        <Contribute />
-        <Voices
-          contributions={contributions}
-          status={contributionsStatus}
-          error={contributionsError}
-          onRetry={refreshContributions}
-        />
-        <SignatoryWall
-          signatories={signatories}
-          status={signatoriesStatus}
-          error={signatoriesError}
-          onRetry={refreshSignatories}
-        />
-        <ClosingCTA />
-        <Footer />
-      </main>
+      <SmoothScroll>
+        <Nav visible={entered} />
+        <main data-entered={entered}>
+          <HallJourney enabled={entered}>
+            <div aria-hidden="true" className="flex h-[3px]">
+              <div className="flex-[2] bg-[var(--color-red)]" />
+              <div className="flex-1 bg-[var(--color-white)]" />
+              <div className="flex-[2] bg-[var(--color-blue)]" />
+            </div>
+            <Statement />
+            <Document />
+            <Principles />
+            <Contribute />
+            <Voices
+              contributions={contributions}
+              status={contributionsStatus}
+              error={contributionsError}
+              onRetry={refreshContributions}
+            />
+            <SignatoryWall
+              signatories={signatories}
+              status={signatoriesStatus}
+              error={signatoriesError}
+              onRetry={refreshSignatories}
+            />
+            <ClosingCTA />
+            <Footer />
+          </HallJourney>
+        </main>
+      </SmoothScroll>
     </>
   );
 }

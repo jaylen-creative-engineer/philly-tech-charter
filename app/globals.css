@@ -1110,3 +1110,64 @@ main[data-entered="false"] [class*=" animate-"] {
   -webkit-text-fill-color: transparent;
   animation: shimmer 4s linear infinite;
 }
+
+/* ── Hall journey — scroll-driven Three.js walkthrough ── */
+
+.hall-canvas {
+  background: #d8d4cc;
+}
+
+.hall-journey-track {
+  position: relative;
+}
+
+.hall-panel-inner {
+  pointer-events: auto;
+}
+
+.hall-kicker {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-red);
+}
+
+.hall-glass-card {
+  padding: clamp(28px, 4vw, 48px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hall-glass-card--warm {
+  background: rgba(245, 240, 230, 0.88);
+}
+
+.hall-scroll-line {
+  background: linear-gradient(to bottom, var(--color-rule-light), transparent);
+  animation: scrollPulse 2s 1s infinite;
+}
+
+.hall-journey-progress {
+  transform: scaleX(0);
+}
+
+.hall-journey-content {
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hall-scroll-line {
+    animation: none;
+  }
+
+  .hall-glass-card {
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
+
