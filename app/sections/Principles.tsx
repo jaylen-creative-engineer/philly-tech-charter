@@ -4,9 +4,6 @@ import { PRINCIPLES } from "../../lib/data";
 import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
 
 const PRINCIPLE_ICONS: CharterIconName[] = [
-  "target",
-  "layers",
-  "culture",
   "access",
   "public",
   "measure",
