@@ -12,10 +12,19 @@ const SECTIONS = [
 
 interface Props {
   visible: boolean;
-  sectionHrefPrefix?: "#" | "/#";
+  sectionHrefPrefix?: "#" | "/#" | "/contribute#";
+  /** Keep surface styling even at the top of the page (e.g. contribute workspace). */
+  forceSurface?: boolean;
+  /** Landing matches the redesign: Read the charter + Participate only. */
+  variant?: "landing" | "workspace";
 }
 
-export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
+export default function Nav({
+  visible,
+  sectionHrefPrefix = "#",
+  forceSurface = false,
+  variant = "workspace",
+}: Props) {
   const [active, setActive] = useState<string>("");
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,6 +35,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
   const scriptRef = useRef<HTMLSpanElement>(null);
   const blockRef = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
+  const isLanding = variant === "landing";
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -36,12 +46,16 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
 
+    if (isLanding) {
+      return () => window.removeEventListener("scroll", onScroll);
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries
+        const visibleEntries = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible[0]) setActive(visible[0].target.id);
+        if (visibleEntries[0]) setActive(visibleEntries[0].target.id);
       },
       { rootMargin: "-30% 0px -55% 0px", threshold: [0, 0.25, 0.5] }
     );
@@ -55,7 +69,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
       window.removeEventListener("scroll", onScroll);
       observer.disconnect();
     };
-  }, [visible]);
+  }, [visible, isLanding]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -123,7 +137,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
 
   if (!visible) return null;
 
-  const onHero = !scrolled;
+  const onHero = !forceSurface && !scrolled;
   const linkClass = (isActive: boolean) =>
     [
       "nav-link",
@@ -134,7 +148,7 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
       .join(" ");
 
   const renderSectionLink = (id: string, label: string, index: number) => {
-    const isActive = active === id && pathname !== "/contribute";
+    const isActive = active === id;
     return (
       <li key={id}>
         <a
@@ -200,16 +214,37 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
         </Link>
 
         <ul className="nav-links nav-links--desktop">
-          {SECTIONS.map(({ id, label }, index) => renderSectionLink(id, label, index))}
-          <li>
-            <Link
-              href="/contribute"
-              className={`nav-cta ${participateActive ? "opacity-90" : ""}`}
-              aria-current={participateActive ? "page" : undefined}
-            >
-              Participate
-            </Link>
-          </li>
+          {isLanding ? (
+            <>
+              <li>
+                <Link href="/contribute" className={linkClass(false)} onClick={closeMenu}>
+                  Read the charter
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contribute"
+                  className={`nav-cta ${participateActive ? "opacity-90" : ""}`}
+                  aria-current={participateActive ? "page" : undefined}
+                >
+                  Participate
+                </Link>
+              </li>
+            </>
+          ) : (
+            <>
+              {SECTIONS.map(({ id, label }, index) => renderSectionLink(id, label, index))}
+              <li>
+                <Link
+                  href="/contribute"
+                  className={`nav-cta ${participateActive ? "opacity-90" : ""}`}
+                  aria-current={participateActive ? "page" : undefined}
+                >
+                  Participate
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
 
         <button
@@ -239,20 +274,42 @@ export default function Nav({ visible, sectionHrefPrefix = "#" }: Props) {
         hidden={!menuOpen}
       >
         <ul className="nav-drawer-links">
-          {SECTIONS.map(({ id, label }, index) => renderSectionLink(id, label, index))}
-          <li>
-            <Link
-              href="/contribute"
-              className={linkClass(participateActive)}
-              aria-current={participateActive ? "page" : undefined}
-              onClick={closeMenu}
-            >
-              <span className="nav-link-index" aria-hidden="true">
-                04
-              </span>
-              Participate
-            </Link>
-          </li>
+          {isLanding ? (
+            <>
+              <li>
+                <Link href="/contribute" className={linkClass(false)} onClick={closeMenu}>
+                  Read the charter
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contribute"
+                  className={linkClass(participateActive)}
+                  aria-current={participateActive ? "page" : undefined}
+                  onClick={closeMenu}
+                >
+                  Participate
+                </Link>
+              </li>
+            </>
+          ) : (
+            <>
+              {SECTIONS.map(({ id, label }, index) => renderSectionLink(id, label, index))}
+              <li>
+                <Link
+                  href="/contribute"
+                  className={linkClass(participateActive)}
+                  aria-current={participateActive ? "page" : undefined}
+                  onClick={closeMenu}
+                >
+                  <span className="nav-link-index" aria-hidden="true">
+                    04
+                  </span>
+                  Participate
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </header>

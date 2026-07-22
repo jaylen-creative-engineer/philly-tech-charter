@@ -29,7 +29,7 @@
   --radius-lg: 10px;
   --radius-xl: 14px;
 
-  --font-display: var(--font-syne), 'Arial Black', sans-serif;
+  --font-display: var(--font-archivo), 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --font-sans: var(--font-dm-sans), Helvetica, Arial, sans-serif;
   --font-script: var(--font-pinyon), 'Snell Roundhand', 'Brush Script MT', cursive;
 }
@@ -764,6 +764,293 @@ main[data-entered="false"] [class*=" animate-"] {
   width: 2.5rem;
   height: 1px;
   background: var(--color-rule-light);
+}
+
+.landing-inner {
+  width: 100%;
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.landing-stats {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  max-width: 32rem;
+  overflow: hidden;
+  border: 1px solid var(--color-rule-light);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sm);
+}
+
+.landing-stat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1rem 0.75rem;
+  text-align: center;
+}
+
+.landing-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-weight: 800;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.landing-stat-label {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--color-mute);
+}
+
+.landing-stat-rule {
+  width: 1px;
+  align-self: stretch;
+  background: var(--color-rule-light);
+}
+
+.landing-synthesis {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.landing-synthesis-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+}
+
+.landing-synthesis-chip {
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #d4cec2;
+  border-radius: var(--radius-sm);
+  background: var(--color-paper);
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-blue);
+}
+
+.landing-synthesis-arrow {
+  padding-inline: 0.2rem;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  color: var(--color-red);
+}
+
+.landing-synthesis-result {
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-blue);
+  box-shadow: var(--shadow-blue);
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-white);
+}
+
+.workspace-surface {
+  background: linear-gradient(180deg, var(--color-blue-deep) 0%, var(--color-blue) 60%, #17306f 100%);
+}
+
+.workspace-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.4rem;
+}
+
+.workspace-panel {
+  flex: 1 1 380px;
+  border-radius: 14px;
+  padding: 1.7rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  animation: riseIn 0.45s ease both;
+}
+
+.workspace-panel--intake {
+  max-width: 520px;
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
+
+.workspace-panel--document {
+  flex: 1 1 460px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  animation-delay: 0.08s;
+}
+
+.workspace-doc-scroll {
+  display: flex;
+  max-height: min(56vh, 520px);
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.workspace-field {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 2px solid var(--color-rule-light);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.workspace-field:focus {
+  border-color: var(--color-red);
+}
+
+.workspace-btn-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.6rem;
+  border: 1px solid #e0dacf;
+  border-radius: var(--radius-sm);
+  background: #ece7dd;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a9a296;
+  cursor: default;
+}
+
+.path-option {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 1rem 1.1rem;
+  border: 2px solid var(--color-rule-light);
+  border-radius: var(--radius-md);
+  background: var(--color-paper);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.path-option:hover {
+  border-color: var(--color-blue);
+  transform: translateY(-1px);
+}
+
+.path-option--highlight {
+  border-color: var(--color-blue);
+  background: linear-gradient(180deg, rgba(26, 53, 128, 0.05), rgba(26, 53, 128, 0.02));
+}
+
+.path-option-num {
+  padding-top: 2px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.path-option-badge {
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  background: var(--color-blue);
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-white);
+}
+
+.draft-slot {
+  padding: 0.9rem;
+  border: 2px dashed var(--color-red);
+  border-radius: var(--radius-md);
+  background: rgba(212, 43, 50, 0.03);
+  animation: slotGlow 2.4s ease-in-out infinite;
+}
+
+.voice-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.voice-tag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
+  max-width: none;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid #d0cabf;
+  border-radius: 3px;
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-blue);
+  pointer-events: none;
+  user-select: none;
+}
+
+.console-cursor {
+  display: inline-block;
+  width: 6px;
+  height: 13px;
+  margin-left: 4px;
+  vertical-align: -2px;
+  background: var(--color-red);
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 45% { opacity: 1; }
+  46%, 100% { opacity: 0; }
+}
+
+@keyframes slotGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(212, 43, 50, 0); }
+  50% { box-shadow: 0 0 26px rgba(212, 43, 50, 0.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draft-slot,
+  .console-cursor,
+  .blue-texture-grid {
+    animation: none;
+  }
 }
 
 /* ── Welcome — civic entry ── */

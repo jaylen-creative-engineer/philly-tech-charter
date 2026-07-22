@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import BlueTexture from "../components/BlueTexture";
 import Pill from "../components/Pill";
-import { CharterIcon, type CharterIconName } from "../components/CharterIcons";
+import { PRINCIPLE_SUMMARIES, PRINCIPLES } from "../../lib/data";
 import { Contribution, ContributionType, Signatory } from "../../lib/types";
 import {
   readParticipantProfile,
@@ -11,330 +12,121 @@ import {
   saveParticipantProfile,
 } from "../../lib/participant-profile";
 import { normalizeSignatoryName } from "../../lib/supabase";
-import { markCharterDataStale } from "../../lib/useCharterData";
+import { markCharterDataStale, useCharterData } from "../../lib/useCharterData";
 
 type ContributionKind = "signature" | "principle" | "other";
+type Stage = "choose" | "draft" | "sign" | "done";
 
-const OTHER_TYPES: { type: ContributionType; short: string; hint: string; icon: CharterIconName }[] = [
+const OTHER_TYPES: { type: ContributionType; short: string; hint: string }[] = [
   {
     type: "A refinement to existing text",
     short: "Refinement",
-    hint: "Sharpen language that is already in the charter.",
-    icon: "refinement",
+    hint: "Sharpen language already in the charter.",
   },
   {
     type: "A challenge or counterpoint",
     short: "Challenge",
-    hint: "Name a tension, disagreement, or missing perspective.",
-    icon: "challenge",
+    hint: "Name a tension or missing perspective.",
   },
   {
     type: "A real-world example or evidence",
     short: "Evidence",
-    hint: "Ground the document in lived practice or local proof.",
-    icon: "evidence",
+    hint: "Ground it in lived, local proof.",
   },
   {
     type: "A question the document doesn't answer",
     short: "Question",
-    hint: "Ask what the next version needs to wrestle with.",
-    icon: "question",
+    hint: "Ask what the next version must wrestle with.",
   },
 ];
 
-const KIND_OPTIONS: {
+const PATHS: {
   kind: ContributionKind;
+  num: string;
+  eyebrow: string;
   label: string;
   description: string;
-  eyebrow: string;
-  icon: CharterIconName;
-  previewPrompt: string;
-  detailsPrompt: string;
-  submitLabel: string;
+  highlight?: boolean;
 }[] = [
   {
     kind: "signature",
+    num: "01",
+    eyebrow: "Stand with it",
     label: "Signature",
     description: "Add your name to the public record of people standing with the charter.",
-    eyebrow: "Stand with it",
-    icon: "signature",
-    previewPrompt: "Good. Your signature is a public mark of support. Here is how it can appear.",
-    detailsPrompt: "What name should the charter carry forward?",
-    submitLabel: "Add my signature",
   },
   {
     kind: "principle",
+    num: "02",
+    eyebrow: "Shape v1.1",
     label: "Principle",
     description: "Propose a guiding commitment for the next version of the document.",
-    eyebrow: "Shape v1.1",
-    icon: "principle",
-    previewPrompt: "Good. A principle should feel clear enough to remember and strong enough to test.",
-    detailsPrompt: "What principle do you want future readers to consider?",
-    submitLabel: "Submit this principle",
+    highlight: true,
   },
   {
     kind: "other",
-    label: "Other contribution",
-    description: "Offer a refinement, challenge, question, example, or piece of evidence.",
+    num: "03",
     eyebrow: "Add context",
-    icon: "voice",
-    previewPrompt: "Good. Context helps the charter get sharper, more honest, and more useful.",
-    detailsPrompt: "What should the next version make room for?",
-    submitLabel: "Submit this contribution",
+    label: "Other contribution",
+    description: "Offer a refinement, challenge, question, or piece of evidence.",
   },
 ];
 
-const cardInputTitle =
-  "w-full bg-transparent border-0 border-b border-transparent text-[20px] font-semibold leading-tight text-[var(--color-blue)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mb-1";
-
-const cardInputContext =
-  "w-full bg-transparent border-0 border-b border-transparent text-[16px] text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mt-1";
-
-const cardInputPrincipleTitle =
-  "w-full bg-transparent border-0 border-b border-transparent font-display text-[13px] uppercase tracking-[0.08em] text-[var(--color-blue)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0 mb-3";
-
-const cardTextarea =
-  "w-full bg-transparent border-0 text-[16px] font-medium leading-[1.7] text-[var(--color-ink)] outline-none resize-none min-h-[96px] placeholder:text-[var(--color-mute)]/45 p-0 mb-5";
-
-const cardAttributionInput =
-  "w-full bg-transparent border-0 border-b border-transparent text-[16px] font-medium text-[var(--color-mute)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45 p-0";
-
-const CONVERSATION_PACE = {
-  typewriterWelcome: 42,
-  typewriterQuestion: 36,
-  typewriterReply: 32,
-  pauseAfterWelcome: 1270,
-  pauseBeforeQuestion: 750,
-  pauseBeforeReply: 750,
-  pauseBeforeCard: 750,
-  revealDuration: 0.50,
-  cardRevealDuration: 0.3,
-  fieldRevealDuration: 0.75,
-  subtitleFadeMs: 1200,
-} as const;
-
-interface SuccessState {
+interface SessionCommit {
   kind: ContributionKind;
-  title: string;
-  message: string;
-  href: string;
-  hrefLabel: string;
-}
-
-interface ConsoleStateInput {
-  kind: ContributionKind | "";
+  type?: ContributionType;
+  title?: string;
+  body: string;
   name: string;
   context: string;
+  num?: string;
+}
+
+function getConsoleText({
+  stage,
+  kind,
+  name,
+  principleTitle,
+  text,
+}: {
+  stage: Stage;
+  kind: ContributionKind | "";
+  name: string;
   principleTitle: string;
   text: string;
-  email: string;
-}
-
-function getKindLabel(kind: ContributionKind | "") {
-  return KIND_OPTIONS.find((option) => option.kind === kind)?.label ?? "Choose a path";
-}
-
-function getConsoleText({ kind, name, context, principleTitle, text, email }: ConsoleStateInput) {
-  if (!kind) {
-    return "Awaiting your first answer. Choose signature, principle, or another contribution path.";
-  }
-
-  if (kind === "signature") {
-    if (!name.trim()) {
-      return "Signature path open. Type the name the charter should carry forward.";
-    }
-
-    if (!context.trim()) {
-      return "Name received. Add optional city or role context, or submit the signature.";
-    }
-
-    if (email.trim()) {
-      return "Almost there. Review your signature and submit when it feels right.";
-    }
-
-    return "Signature card is ready. Review it below, then add your name to the record.";
-  }
-
-  if (kind === "principle") {
-    if (!principleTitle.trim()) {
-      return "Principle path open. Start with a short, memorable title.";
-    }
-
-    if (!text.trim()) {
-      return "Title received. Now write the principle body in one to three sentences.";
-    }
-
-    if (!name.trim()) {
-      return "Principle draft is ready. Add your name before submitting.";
-    }
-
-    if (email.trim()) {
-      return "Almost there. Review your principle and submit when it feels right.";
-    }
-
-    return "Principle draft is live. Edit the card below, then submit it for v1.1.";
-  }
-
-  if (!text.trim()) {
-    return "Contribution path open. Choose a type, then write the perspective this charter needs.";
-  }
-
-  if (!name.trim()) {
-    return "Contribution draft is ready. Add your name before submitting.";
-  }
-
-  if (email.trim()) {
-    return "Almost there. Review your contribution and submit when it feels right.";
-  }
-
-  return "Contribution draft is live. Edit the card below, then submit it to the public record.";
-}
-
-function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updatePreference = () => setPrefersReducedMotion(query.matches);
-
-    updatePreference();
-    query.addEventListener("change", updatePreference);
-    return () => query.removeEventListener("change", updatePreference);
-  }, []);
-
-  return prefersReducedMotion;
-}
-
-type TypewriterSlot =
-  | "welcome-headline"
-  | "first-question"
-  | "preview-prompt"
-  | "details-prompt";
-
-const TYPEWRITER_CURSOR_COLOR: Record<TypewriterSlot, string> = {
-  "welcome-headline": "var(--color-cream)",
-  "first-question": "var(--color-blue)",
-  "preview-prompt": "var(--color-blue)",
-  "details-prompt": "var(--color-blue)",
-};
-
-function TypewriterText({
-  text,
-  slot,
-  activeSlot,
-  speed = 22,
-  startDelay = 0,
-  cursor = true,
-  cursorColor,
-  reducedMotion,
-  className = "",
-  onComplete,
-}: {
-  text: string;
-  slot: TypewriterSlot;
-  activeSlot: TypewriterSlot | null;
-  speed?: number;
-  startDelay?: number;
-  cursor?: boolean;
-  cursorColor?: string;
-  reducedMotion: boolean;
-  className?: string;
-  onComplete?: () => void;
 }) {
-  const [visibleCharacters, setVisibleCharacters] = useState(reducedMotion ? text.length : 0);
-  const completedRef = useRef(false);
-  const isActive = activeSlot === slot;
-
-  useEffect(() => {
-    completedRef.current = false;
-    setVisibleCharacters(reducedMotion ? text.length : isActive ? 0 : text.length);
-  }, [isActive, reducedMotion, text]);
-
-  useEffect(() => {
-    if (!isActive || reducedMotion) {
-      return;
-    }
-
-    let interval: ReturnType<typeof setInterval> | undefined;
-
-    const timeout = setTimeout(() => {
-      interval = setInterval(() => {
-        setVisibleCharacters((current) => {
-          if (current >= text.length) {
-            if (interval) clearInterval(interval);
-            return current;
-          }
-
-          return current + 1;
-        });
-      }, speed);
-    }, startDelay);
-
-    return () => {
-      clearTimeout(timeout);
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, reducedMotion, speed, startDelay, text]);
-
-  useEffect(() => {
-    if (!isActive || completedRef.current) {
-      return;
-    }
-
-    if (reducedMotion || visibleCharacters >= text.length) {
-      completedRef.current = true;
-      if (!reducedMotion) {
-        onComplete?.();
-      }
-    }
-  }, [isActive, onComplete, reducedMotion, text.length, visibleCharacters]);
-
-  const visibleText = isActive && !reducedMotion ? text.slice(0, visibleCharacters) : text;
-  const showCursor = cursor && isActive && !reducedMotion;
-  const inkColor = cursorColor ?? TYPEWRITER_CURSOR_COLOR[slot];
-
-  return (
-    <span
-      className={`typewriter-copy ${className}`}
-      style={{ color: inkColor, ["--typewriter-cursor-color" as string]: inkColor }}
-      role="text"
-      aria-label={text}
-    >
-      <span aria-hidden="true">{visibleText}</span>
-      {showCursor && (
-        <span
-          className={`typewriter-cursor ${slot === "welcome-headline" ? "typewriter-cursor-hero" : ""}`}
-          aria-hidden="true"
-        />
-      )}
-    </span>
-  );
+  if (stage === "choose") {
+    return "Awaiting your first answer. Choose a path to begin.";
+  }
+  if (stage === "done") {
+    return "Received. Your contribution is now part of the public record.";
+  }
+  if (kind === "principle" && stage === "draft") {
+    if (!principleTitle.trim()) return "Principle path open. Start with a short, memorable title.";
+    if (!text.trim()) return "Title received. Now write it in one to three sentences.";
+    return "Draft looks ready. Continue to sign it.";
+  }
+  if (kind === "other" && stage === "draft") {
+    if (!text.trim()) return "Choose a type, then write the perspective this needs.";
+    return "Draft ready. Continue to sign it.";
+  }
+  if (kind === "signature" && stage === "sign") {
+    if (!name.trim()) return "Signature path open. Type the name the charter should carry forward.";
+    return "Ready to sign. Add your name to the record.";
+  }
+  if (stage === "sign") {
+    if (!name.trim()) return "Almost there. Add your name to sign this contribution.";
+    return "Ready. Add it to the document when it feels right.";
+  }
+  return "Choose a path to begin.";
 }
 
-function ConversationReveal({
-  visible,
-  children,
-  className = "",
-}: {
-  visible: boolean;
-  children: ReactNode;
-  className?: string;
-}) {
-  if (!visible) {
-    return null;
-  }
-
-  return (
-    <div
-      className={className}
-      style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}
-    >
-      {children}
-    </div>
-  );
+function shortForType(type: ContributionType) {
+  return OTHER_TYPES.find((option) => option.type === type)?.short ?? "Voice";
 }
 
 export default function ContributionExperience() {
+  const [stage, setStage] = useState<Stage>("choose");
   const [kind, setKind] = useState<ContributionKind | "">("");
   const [otherType, setOtherType] = useState<ContributionType>(OTHER_TYPES[0].type);
   const [name, setName] = useState("");
@@ -344,85 +136,123 @@ export default function ContributionExperience() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<SuccessState | null>(null);
-  const [activeTypewriter, setActiveTypewriter] = useState<TypewriterSlot | null>("welcome-headline");
-  const [welcomeHeadlineComplete, setWelcomeHeadlineComplete] = useState(false);
-  const [welcomeComplete, setWelcomeComplete] = useState(false);
-  const [firstQuestionComplete, setFirstQuestionComplete] = useState(false);
-  const [previewPromptComplete, setPreviewPromptComplete] = useState(false);
-  const [detailsPromptComplete, setDetailsPromptComplete] = useState(false);
+  const [sessionCommits, setSessionCommits] = useState<SessionCommit[]>([]);
+  const [lastKind, setLastKind] = useState<ContributionKind | "">("");
   const appliedPreselection = useRef(false);
 
-  const hasSelectedKind = Boolean(kind);
+  const { contributions } = useCharterData();
+
   const isPrinciple = kind === "principle";
   const isSignature = kind === "signature";
-  const contributionText = text.trim();
-  const selectedOption = KIND_OPTIONS.find((option) => option.kind === kind);
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const previewPrompt = selectedOption?.previewPrompt ?? "Once you choose a path, we will show the card it creates.";
-  const detailsPrompt = selectedOption?.detailsPrompt ?? "Tell us what should go on the card.";
+  const titleReady = principleTitle.trim().length > 0;
+  const bodyReady = text.trim().length > 0;
+  const continueReady = isPrinciple ? titleReady && bodyReady : bodyReady;
+  const submitReady = name.trim().length > 0;
+
+  const proposedFromRecord = contributions.filter((c) => c.type === "A new principle");
+  const sessionPrinciples = sessionCommits.filter((c) => c.kind === "principle");
+  const sessionOnlyPrinciples = sessionPrinciples.filter(
+    (commit) =>
+      !proposedFromRecord.some(
+        (entry) => entry.principleTitle === commit.title && entry.name === commit.name,
+      ),
+  );
+  const principlesCount =
+    PRINCIPLES.length + proposedFromRecord.length + sessionOnlyPrinciples.length;
+  const versionLabel = principlesCount > PRINCIPLES.length ? "1.1" : "1.0";
+  const draftNum = String(principlesCount + 1).padStart(2, "0");
+
   const consoleText = getConsoleText({
+    stage,
     kind,
     name,
-    context,
     principleTitle,
     text,
-    email,
   });
 
-  const showGuidanceSection = hasSelectedKind;
-  const showDetailsSection = hasSelectedKind && previewPromptComplete;
-  const showCard = hasSelectedKind && detailsPromptComplete;
-  const showOtherTypePicker = kind === "other" && showCard;
-  const showCardContext = showCard && (isSignature ? name.trim().length > 0 : true);
-  const showCardBody = showCard && (isPrinciple ? principleTitle.trim().length > 0 : kind === "other");
-  const showCardAttribution = showCard && !isSignature && contributionText.length > 0;
-  const showSubmit =
-    showCard &&
-    (isSignature
-      ? name.trim().length > 0
-      : isPrinciple
-        ? principleTitle.trim().length > 0 && contributionText.length > 0
-        : contributionText.length > 0);
-
-  useEffect(() => {
-    if (!prefersReducedMotion) {
-      return;
-    }
-
-    setWelcomeHeadlineComplete(true);
-    setWelcomeComplete(true);
-    setFirstQuestionComplete(true);
-    setActiveTypewriter(null);
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (!welcomeComplete || appliedPreselection.current) {
-      return;
-    }
-
-    const param = new URLSearchParams(window.location.search).get("kind");
-    if (param !== "signature" && param !== "principle" && param !== "other") {
-      return;
-    }
-
-    appliedPreselection.current = true;
-    setFirstQuestionComplete(true);
-    handleKindSelect(param);
-  }, [welcomeComplete]);
-
-  function beginConversation() {
-    setWelcomeHeadlineComplete(true);
-    window.setTimeout(() => {
-      setWelcomeComplete(true);
-      setActiveTypewriter("first-question");
-    }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseAfterWelcome);
+  let eyebrow = "";
+  let heading = "";
+  let subhead = "";
+  if (stage === "choose") {
+    eyebrow = "Philadelphia Declaration · Intake";
+    heading = "What would you like to contribute?";
+    subhead = "Pick the path that fits. The document on the right updates as you go.";
+  } else if (isPrinciple && stage === "draft") {
+    eyebrow = "Shape v1.1 · Principle";
+    heading = "Name the commitment.";
+    subhead = "A principle is clear enough to remember and strong enough to test.";
+  } else if (kind === "other" && stage === "draft") {
+    eyebrow = "Add context";
+    heading = "What should the next version make room for?";
+    subhead = "A refinement, challenge, question, or piece of evidence.";
+  } else if (isSignature && stage === "sign") {
+    eyebrow = "Stand with it";
+    heading = "Add your name.";
+    subhead = "Your signature joins the public record of people behind the charter.";
+  } else if (stage === "sign") {
+    eyebrow = "Attribution";
+    heading = "Sign your contribution.";
+    subhead = "This is how you will be credited in the document.";
   }
 
-  function applyParticipantProfileToForm() {
+  let submitLabel = "Add to the record";
+  if (isPrinciple) submitLabel = "Add to the document";
+  else if (isSignature) submitLabel = "Add my signature";
+
+  let doneTag = "";
+  let doneTitle = "";
+  let doneMsg = "";
+  if (stage === "done") {
+      if (lastKind === "principle") {
+      const last = sessionOnlyPrinciples[sessionOnlyPrinciples.length - 1]
+        ?? sessionPrinciples[sessionPrinciples.length - 1];
+      doneTag = "Added to v1.1";
+      doneTitle = `Principle ${last?.num ?? ""} has joined the record.`;
+      doneMsg =
+        "Your commitment is now part of the working draft for v1.1. Every reader will see it — credited to you.";
+    } else if (lastKind === "signature") {
+      doneTag = "Signed";
+      doneTitle = "Your name is on the record.";
+      doneMsg =
+        "Thank you for standing with the charter. Your signature is now part of the public declaration of support.";
+    } else {
+      doneTag = "Recorded";
+      doneTitle = "Your voice has been added.";
+      doneMsg =
+        "Thank you for helping sharpen what this document can become. It now sits with the other voices shaping v1.1.";
+    }
+  }
+
+  const showDraftSlot = isPrinciple && (stage === "draft" || stage === "sign");
+  const recentVoices = [
+    ...sessionCommits
+      .filter((c) => c.kind !== "principle")
+      .map((c) => ({
+        tag: c.kind === "signature" ? "Signed" : shortForType(c.type ?? OTHER_TYPES[0].type),
+        text: c.body,
+        by: `— ${c.name}${c.context ? ` · ${c.context}` : ""}`,
+      })),
+    ...contributions
+      .filter((c) => c.type !== "A new principle")
+      .slice(0, 4)
+      .map((c) => ({
+        tag: shortForType(c.type),
+        text: c.text,
+        by: `— ${c.name}${c.context ? ` · ${c.context}` : ""}`,
+      })),
+  ].slice(0, 5);
+
+  useEffect(() => {
+    if (appliedPreselection.current) return;
+    const param = new URLSearchParams(window.location.search).get("kind");
+    if (param !== "signature" && param !== "principle" && param !== "other") return;
+    appliedPreselection.current = true;
+    choosePath(param);
+  }, []);
+
+  function applyProfile() {
     const profile = readParticipantProfile();
     if (!profile) return;
-
     setName((current) => current.trim() || profile.name);
     setContext((current) => current.trim() || profile.context);
     if (profile.email) {
@@ -430,122 +260,40 @@ export default function ContributionExperience() {
     }
   }
 
-  function handleKindSelect(nextKind: ContributionKind) {
+  function choosePath(nextKind: ContributionKind) {
     setKind(nextKind);
     setError("");
-    setSuccess(null);
-    setPreviewPromptComplete(false);
-    setDetailsPromptComplete(false);
-    setActiveTypewriter("preview-prompt");
-    if (nextKind === "signature") {
-      setPrincipleTitle("");
-      setText("");
-    }
-
-    applyParticipantProfileToForm();
-  }
-
-  function startPrincipleFlow() {
-    const profile = readParticipantProfile();
-
-    setSuccess(null);
-    setError("");
-    setLoading(false);
-    setKind("principle");
-    setOtherType(OTHER_TYPES[0].type);
     setPrincipleTitle("");
     setText("");
-    setName(profile?.name ?? "");
-    setContext(profile?.context ?? "");
-    setEmail(profile?.email ?? "");
-    setPreviewPromptComplete(false);
-    setDetailsPromptComplete(false);
-    setActiveTypewriter("preview-prompt");
-    setWelcomeComplete(true);
-    setWelcomeHeadlineComplete(true);
-    setFirstQuestionComplete(true);
+    applyProfile();
+    setStage(nextKind === "signature" ? "sign" : "draft");
   }
 
-  function startSignatureFlow() {
-    const profile = readParticipantProfile();
-
-    setSuccess(null);
-    setError("");
-    setLoading(false);
-    setKind("signature");
-    setPrincipleTitle("");
-    setText("");
-    setName(profile?.name ?? "");
-    setContext(profile?.context ?? "");
-    setEmail(profile?.email ?? "");
-    setPreviewPromptComplete(false);
-    setDetailsPromptComplete(false);
-    setActiveTypewriter("preview-prompt");
-    setWelcomeComplete(true);
-    setWelcomeHeadlineComplete(true);
-    setFirstQuestionComplete(true);
-  }
-
-  function resetForm() {
-    setKind("");
-    setOtherType(OTHER_TYPES[0].type);
-    setName("");
-    setContext("");
-    setPrincipleTitle("");
-    setText("");
-    setEmail("");
-    setError("");
-    setLoading(false);
-    setSuccess(null);
-    setPreviewPromptComplete(false);
-    setDetailsPromptComplete(false);
-    setWelcomeComplete(true);
-    setWelcomeHeadlineComplete(true);
-    setFirstQuestionComplete(false);
-    setActiveTypewriter("first-question");
-  }
-
-  function resetSameKind() {
-    const currentKind = success?.kind ?? kind;
-    if (!currentKind) {
-      resetForm();
+  function goBack() {
+    if (stage === "sign" && kind !== "signature") {
+      setStage("draft");
       return;
     }
+    setKind("");
+    setStage("choose");
+    setError("");
+  }
 
-    setName("");
-    setContext("");
+  function resetToChoose() {
+    setStage("choose");
+    setKind("");
     setPrincipleTitle("");
     setText("");
+    setName("");
+    setContext("");
     setEmail("");
     setError("");
     setLoading(false);
-    setSuccess(null);
-    setPreviewPromptComplete(true);
-    setDetailsPromptComplete(true);
-    setWelcomeComplete(true);
-    setWelcomeHeadlineComplete(true);
-    setFirstQuestionComplete(true);
-    setKind(currentKind);
-    setActiveTypewriter(null);
+    applyProfile();
   }
 
-  function validate() {
-    if (!kind) {
-      return "Choose the kind of contribution you want to make.";
-    }
-    if (!name.trim()) {
-      return "Your name is required.";
-    }
-    if (isPrinciple && !principleTitle.trim()) {
-      return "Please give your principle a title.";
-    }
-    if (!isSignature && !contributionText) {
-      return "Please write the contribution you want to add.";
-    }
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return "Please enter a valid email address, or leave it blank.";
-    }
-    return "";
+  function addAnother() {
+    resetToChoose();
   }
 
   async function postJson(url: string, payload: unknown) {
@@ -561,63 +309,9 @@ export default function ContributionExperience() {
     }
   }
 
-  async function submitSignature() {
-    const signatory: Signatory & { email?: string } = {
-      id: `sig-${Date.now()}`,
-      name: name.trim(),
-      context: context.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    if (email.trim()) {
-      signatory.email = email.trim();
-    }
-
-    await postJson("/api/signatories", signatory);
-  }
-
-  async function submitContribution() {
-    const attribution = resolveParticipantAttribution(name, context);
-    const profile = readParticipantProfile();
-    const signatoryNameKey = profile?.name
-      ? normalizeSignatoryName(profile.name)
-      : attribution.name
-        ? normalizeSignatoryName(attribution.name)
-        : undefined;
-
-    const contribution: Contribution & { email?: string; signatoryNameKey?: string } = {
-      id: `contrib-${Date.now()}`,
-      name: attribution.name,
-      context: attribution.context,
-      type: isPrinciple ? "A new principle" : otherType,
-      text: contributionText,
-      principleTitle: isPrinciple ? principleTitle.trim() : undefined,
-      createdAt: new Date().toISOString(),
-    };
-
-    if (signatoryNameKey) {
-      contribution.signatoryNameKey = signatoryNameKey;
-    }
-
-    if (email.trim()) {
-      contribution.email = email.trim();
-    }
-
-    if (contribution.name) {
-      saveParticipantProfile({
-        name: contribution.name,
-        context: contribution.context,
-        email: email.trim() || undefined,
-      });
-    }
-
-    await postJson("/api/contributions", contribution);
-  }
-
   async function handleSubmit() {
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
+    if (!kind || !submitReady) {
+      setError("Your name is required.");
       return;
     }
 
@@ -626,36 +320,81 @@ export default function ContributionExperience() {
 
     try {
       if (isSignature) {
-        await submitSignature();
+        const signatory: Signatory & { email?: string } = {
+          id: `sig-${Date.now()}`,
+          name: name.trim(),
+          context: context.trim(),
+          createdAt: new Date().toISOString(),
+        };
+        if (email.trim()) signatory.email = email.trim();
+        await postJson("/api/signatories", signatory);
         saveParticipantProfile({
           name: name.trim(),
           context: context.trim(),
           email: email.trim() || undefined,
         });
-        markCharterDataStale();
-        setSuccess({
-          kind: "signature",
-          title: "Your name has been added.",
-          message: "Thank you for standing with the charter.",
-          href: "/#signatories",
-          hrefLabel: "View signatories",
-        });
+        setSessionCommits((prev) => [
+          ...prev,
+          {
+            kind: "signature",
+            body: "Stood with the Philly Tech Charter.",
+            name: name.trim(),
+            context: context.trim(),
+          },
+        ]);
       } else {
-        await submitContribution();
-        markCharterDataStale();
-        setSuccess({
-          kind: isPrinciple ? "principle" : "other",
-          title: isPrinciple ? "Your principle has been added." : "Your contribution has been added.",
-          message: "Thank you for helping sharpen what this document can become.",
-          href: "/#voices",
-          hrefLabel: "View voices",
-        });
+        const attribution = resolveParticipantAttribution(name, context);
+        const profile = readParticipantProfile();
+        const signatoryNameKey = profile?.name
+          ? normalizeSignatoryName(profile.name)
+          : attribution.name
+            ? normalizeSignatoryName(attribution.name)
+            : undefined;
+
+        const contribution: Contribution & { email?: string; signatoryNameKey?: string } = {
+          id: `contrib-${Date.now()}`,
+          name: attribution.name,
+          context: attribution.context,
+          type: isPrinciple ? "A new principle" : otherType,
+          text: text.trim(),
+          principleTitle: isPrinciple ? principleTitle.trim() : undefined,
+          createdAt: new Date().toISOString(),
+        };
+        if (signatoryNameKey) contribution.signatoryNameKey = signatoryNameKey;
+        if (email.trim()) contribution.email = email.trim();
+
+        if (contribution.name) {
+          saveParticipantProfile({
+            name: contribution.name,
+            context: contribution.context,
+            email: email.trim() || undefined,
+          });
+        }
+
+        await postJson("/api/contributions", contribution);
+        setSessionCommits((prev) => [
+          ...prev,
+          {
+            kind: isPrinciple ? "principle" : "other",
+            type: isPrinciple ? "A new principle" : otherType,
+            title: isPrinciple ? principleTitle.trim() : undefined,
+            body: isPrinciple
+              ? text.trim()
+              : text.trim(),
+            name: attribution.name,
+            context: attribution.context,
+            num: isPrinciple ? draftNum : undefined,
+          },
+        ]);
       }
 
-      setName("");
-      setContext("");
+      markCharterDataStale();
+      setLastKind(kind);
+      setStage("done");
       setPrincipleTitle("");
       setText("");
+      setName("");
+      setContext("");
       setEmail("");
     } catch (submitError) {
       setError(
@@ -668,75 +407,34 @@ export default function ContributionExperience() {
     }
   }
 
+  const draftTitleDisplay = principleTitle.trim() || "Your principle title";
+  const draftBodyDisplay =
+    text.trim() ||
+    "Start typing on the left — your words appear here, in the document, as you write them.";
+  const draftByline = name.trim()
+    ? `— ${name.trim()}${context.trim() ? ` · ${context.trim()}` : ""}`
+    : "— unsigned draft";
+
   return (
-    <section className="blue-surface min-h-screen px-6 pb-24 pt-28 text-[var(--color-cream)]">
+    <section className="workspace-surface blue-surface min-h-screen px-6 pb-20 pt-28 text-[var(--color-cream)] max-md:pt-24">
       <BlueTexture variant="hero" />
-      <div className="relative z-10 mx-auto max-w-[980px]">
-        <div className="mb-12 mt-[30px] text-center">
-          <h1
-            className="font-display mx-auto mb-5 max-w-4xl leading-[0.98] tracking-[-0.02em]"
-            style={{ fontSize: "clamp(42px, 7vw, 92px)" }}
-          >
-            <TypewriterText
-              slot="welcome-headline"
-              activeSlot={activeTypewriter}
-              text="Let's add your voice."
-              speed={CONVERSATION_PACE.typewriterWelcome}
-              reducedMotion={prefersReducedMotion}
-              onComplete={beginConversation}
-            />
-          </h1>
-          <p
-            className={`mx-auto max-w-2xl text-[16px] leading-[1.8] text-[var(--color-cream)]/80 transition-opacity ease-out ${
-              welcomeHeadlineComplete ? "opacity-100" : "opacity-0"
-            }`}
-            style={{ transitionDuration: `${CONVERSATION_PACE.subtitleFadeMs}ms` }}
-          >
-            We&apos;ll begin with a simple question, shape the card together, and end with a clear
-            confirmation that your contribution has been received.
+
+      <div className="relative z-10 mx-auto max-w-[1240px]">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <p className="font-display text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--color-cream)]/60">
+            Philadelphia Declaration · Contribution
           </p>
+          <Link
+            href="/"
+            className="font-display inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--color-cream)]/55 transition-colors hover:text-[var(--color-cream)]"
+          >
+            ← Back to start
+          </Link>
         </div>
 
-        {success ? (
-          <div className="mx-auto max-w-[680px] text-center">
-            <div
-              className="card-surface mb-6 bg-[var(--color-cream)] px-8 py-10 text-[var(--color-blue)]"
-              style={{ animation: `riseIn ${CONVERSATION_PACE.cardRevealDuration}s ease forwards` }}
-            >
-              <span className="mb-4 inline-flex text-[var(--color-gold)]" aria-hidden="true">
-                <CharterIcon
-                  name={success.kind === "signature" ? "star" : "principle"}
-                  size={36}
-                />
-              </span>
-              <p className="font-display mb-2 text-[20px]">{success.title}</p>
-              <p className="text-[14px] leading-[1.7] text-[var(--color-mute)]">{success.message}</p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Pill variant="cream" href={success.href}>
-                {success.hrefLabel}
-              </Pill>
-              {success.kind === "signature" && (
-                <Pill variant="outline-light" onClick={startPrincipleFlow}>
-                  Propose a principle
-                </Pill>
-              )}
-              {(success.kind === "principle" || success.kind === "other") && (
-                <Pill variant="outline-light" onClick={startSignatureFlow}>
-                  Sign the charter
-                </Pill>
-              )}
-              <Pill variant="outline-light" onClick={resetSameKind}>
-                {success.kind === "signature" ? "Add another signature" : "Add another"}
-              </Pill>
-            </div>
-          </div>
-        ) : welcomeComplete ? (
-          <div
-            className="card-surface bg-[var(--color-cream)] p-6 text-[var(--color-ink)] shadow-[0_24px_80px_rgba(0,0,0,0.18)] md:p-10"
-              style={{ animation: `riseIn ${CONVERSATION_PACE.cardRevealDuration}s ease forwards` }}
-          >
-            <div className="contribution-console mb-10 p-4">
+        <div className="workspace-grid">
+          <div className="workspace-panel workspace-panel--intake">
+            <div className="contribution-console mb-6 p-4">
               <div className="mb-3 flex items-center justify-between gap-4">
                 <p className="font-display text-[9px] uppercase tracking-[0.24em] text-[var(--color-red)]">
                   Live intake
@@ -747,421 +445,389 @@ export default function ContributionExperience() {
                   <span className="h-2 w-2 rounded-full bg-[var(--color-blue)]" />
                 </div>
               </div>
-              <p className="font-mono text-[13px] leading-[1.7] text-[var(--color-blue)] transition-opacity duration-300">
+              <p className="font-mono text-[13px] leading-[1.65] text-[var(--color-blue)]">
                 <span className="text-[var(--color-red)]" aria-hidden="true">
                   &gt;{" "}
                 </span>
                 {consoleText}
+                <span className="console-cursor" aria-hidden="true" />
               </p>
             </div>
 
-            <div className="mb-10">
-              <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                Philadelphia Declaration · Intake
-              </p>
-              <h2 className="font-display mb-4 text-[clamp(24px,3vw,38px)] leading-tight text-[var(--color-blue)]">
-                <TypewriterText
-                  slot="first-question"
-                  activeSlot={activeTypewriter}
-                  text="What would you like to contribute?"
-                  speed={CONVERSATION_PACE.typewriterQuestion}
-                  startDelay={CONVERSATION_PACE.pauseBeforeQuestion}
-                  reducedMotion={prefersReducedMotion}
-                  onComplete={() => {
-                    setActiveTypewriter(null);
-                    window.setTimeout(() => {
-                      setFirstQuestionComplete(true);
-                    }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseBeforeReply);
-                  }}
-                />
-              </h2>
-              <ConversationReveal visible={firstQuestionComplete}>
-                <p className="mb-6 max-w-2xl text-[14px] leading-[1.7] text-[var(--color-mute)]">
-                  Pick the path that feels closest. The next prompt will adapt to what you choose.
+            {stage !== "done" && (
+              <div className="mb-6">
+                <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                  {eyebrow}
                 </p>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {KIND_OPTIONS.map((option) => (
-                    <button
-                      key={option.kind}
-                      type="button"
-                      data-selected={kind === option.kind}
-                      className="type-card cursor-pointer p-4 text-left"
-                      onClick={() => handleKindSelect(option.kind)}
+                <h1 className="font-display mb-3 text-[clamp(24px,3vw,34px)] leading-[1.08] text-[var(--color-blue)]">
+                  {heading}
+                </h1>
+                <p className="max-w-xl text-[14px] leading-[1.65] text-[var(--color-mute)]">
+                  {subhead}
+                </p>
+              </div>
+            )}
+
+            {stage === "choose" && (
+              <div className="flex flex-col gap-3">
+                {PATHS.map((path) => (
+                  <button
+                    key={path.kind}
+                    type="button"
+                    className={`path-option ${path.highlight ? "path-option--highlight" : ""}`}
+                    onClick={() => choosePath(path.kind)}
+                  >
+                    {path.highlight && (
+                      <span className="path-option-badge">Most shaping</span>
+                    )}
+                    <span
+                      className={`path-option-num ${path.highlight ? "text-[var(--color-blue)]" : "text-[var(--color-gold)]"}`}
                     >
-                      <span className="icon-badge mb-3 h-9 w-9 text-[var(--color-red)]">
-                        <CharterIcon name={option.icon} size={18} />
+                      {path.num}
+                    </span>
+                    <span className="min-w-0 flex-1 text-left">
+                      <span className="mb-1 block font-display text-[9px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                        {path.eyebrow}
                       </span>
-                      <p className="font-display mb-2 text-[9px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                        {option.eyebrow}
-                      </p>
-                      <p className="font-display mb-2 text-[17px] leading-tight text-[var(--color-blue)]">
-                        {option.label}
-                      </p>
-                      <p className="text-[12px] leading-[1.55] text-[var(--color-mute)]">
-                        {option.description}
-                      </p>
+                      <span className="mb-1 block font-display text-[17px] text-[var(--color-blue)]">
+                        {path.label}
+                      </span>
+                      <span className="block text-[13px] leading-[1.5] text-[var(--color-mute)]">
+                        {path.description}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {isPrinciple && stage === "draft" && (
+              <div>
+                <label className="mb-2 block font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  Principle title
+                </label>
+                <input
+                  className="workspace-field mb-4 text-[18px] font-semibold text-[var(--color-blue)]"
+                  type="text"
+                  placeholder="A short, memorable title"
+                  value={principleTitle}
+                  onChange={(event) => setPrincipleTitle(event.target.value)}
+                />
+                {titleReady && (
+                  <div style={{ animation: "riseIn 0.4s ease both" }}>
+                    <label className="mb-2 block font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                      The commitment
+                    </label>
+                    <textarea
+                      className="workspace-field min-h-[110px] resize-none text-[15px] leading-[1.65] text-[var(--color-ink)]"
+                      rows={4}
+                      placeholder="Describe it in one to three sentences. Watch it appear in the document on the right."
+                      value={text}
+                      onChange={(event) => setText(event.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {kind === "other" && stage === "draft" && (
+              <div>
+                <p className="mb-3 font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  What kind of contribution?
+                </p>
+                <div className="mb-4 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+                  {OTHER_TYPES.map((option) => (
+                    <button
+                      key={option.type}
+                      type="button"
+                      data-selected={otherType === option.type}
+                      className="type-card cursor-pointer p-3 text-left"
+                      onClick={() => setOtherType(option.type)}
+                    >
+                      <span className="mb-1 block font-display text-[11px] uppercase tracking-[0.04em] text-[var(--color-blue)]">
+                        {option.short}
+                      </span>
+                      <span className="block text-[11px] leading-snug text-[var(--color-mute)]">
+                        {option.hint}
+                      </span>
                     </button>
                   ))}
                 </div>
-              </ConversationReveal>
+                <label className="mb-2 block font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  Your contribution
+                </label>
+                <textarea
+                  className="workspace-field min-h-[110px] resize-none text-[15px] leading-[1.65] text-[var(--color-ink)]"
+                  rows={4}
+                  placeholder="Write the refinement, challenge, question, or evidence you want the next version to hold."
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                />
+              </div>
+            )}
+
+            {stage === "sign" && (
+              <div>
+                <label className="mb-2 block font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  Your name
+                </label>
+                <input
+                  className="workspace-field mb-4 text-[16px] font-semibold text-[var(--color-ink)]"
+                  type="text"
+                  placeholder="The name the charter should carry forward"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  autoComplete="name"
+                />
+                <label className="mb-2 block font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  City or role{" "}
+                  <span className="font-sans font-medium normal-case tracking-normal text-[var(--color-mute)]">
+                    — optional
+                  </span>
+                </label>
+                <input
+                  className="workspace-field mb-4 text-[15px] text-[var(--color-mute)]"
+                  type="text"
+                  placeholder="Philadelphia, PA · Designer"
+                  value={context}
+                  onChange={(event) => setContext(event.target.value)}
+                />
+                <label className="mb-2 block font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  Email{" "}
+                  <span className="font-sans font-medium normal-case tracking-normal text-[var(--color-mute)]">
+                    — optional, never shown
+                  </span>
+                </label>
+                <input
+                  className="workspace-field text-[14px] text-[var(--color-ink)]"
+                  type="email"
+                  placeholder="For follow-up about v1.1"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                />
+              </div>
+            )}
+
+            {stage === "done" && (
+              <div className="py-2 text-center" style={{ animation: "riseIn 0.4s ease both" }}>
+                <span className="mb-4 inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-[var(--color-gold)] bg-[rgba(196,154,46,0.14)] font-display text-[22px] font-extrabold text-[var(--color-gold)]">
+                  ✓
+                </span>
+                <p className="font-display mb-2 text-[9px] uppercase tracking-[0.2em] text-[var(--color-red)]">
+                  {doneTag}
+                </p>
+                <h2 className="font-display mb-3 text-[24px] leading-tight text-[var(--color-blue)]">
+                  {doneTitle}
+                </h2>
+                <p className="mx-auto mb-6 max-w-md text-[14px] leading-[1.65] text-[var(--color-mute)]">
+                  {doneMsg}
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Pill variant="red" onClick={addAnother}>
+                    Add another →
+                  </Pill>
+                  <Pill variant="outline" href="/">
+                    Back to start
+                  </Pill>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 bg-[var(--color-red)] px-4 py-3 text-[13px] text-[var(--color-cream)]">
+                {error}
+              </div>
+            )}
+
+            {(stage === "draft" || stage === "sign") && (
+              <div className="mt-6 flex items-center gap-3">
+                <button
+                  type="button"
+                  className="font-display px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-[var(--color-mute)] transition-colors hover:text-[var(--color-blue)]"
+                  onClick={goBack}
+                >
+                  ← Back
+                </button>
+                <div className="flex-1" />
+                {stage === "draft" && (
+                  continueReady ? (
+                    <Pill variant="blue" onClick={() => setStage("sign")}>
+                      Continue →
+                    </Pill>
+                  ) : (
+                    <span className="workspace-btn-disabled">Continue →</span>
+                  )
+                )}
+                {stage === "sign" && (
+                  submitReady ? (
+                    <Pill variant="red" onClick={handleSubmit}>
+                      {loading ? "Submitting..." : submitLabel}
+                    </Pill>
+                  ) : (
+                    <span className="workspace-btn-disabled">{submitLabel}</span>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+
+          <div id="document" className="workspace-panel workspace-panel--document">
+            <div className="mb-5 flex items-start justify-between gap-4 border-b-[3px] border-[var(--color-blue)] pb-5">
+              <div>
+                <span className="mb-2 inline-flex items-center gap-2 font-display text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--color-red)]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-red)] animate-pulse-dot" />
+                  Living document
+                </span>
+                <h2 className="font-display text-[clamp(20px,2.4vw,28px)] leading-[1.05] text-[var(--color-blue)]">
+                  A Declaration of
+                  <br />
+                  <span className="text-[var(--color-red)]">Intentional Design</span>
+                </h2>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="font-display text-[24px] font-extrabold leading-none text-[var(--color-gold)]">
+                  v{versionLabel}
+                </p>
+                <p className="mt-1.5 font-mono text-[10px] tracking-[0.1em] text-[var(--color-mute)]">
+                  {principlesCount} PRINCIPLES
+                </p>
+              </div>
             </div>
 
-            <ConversationReveal visible={showGuidanceSection} className="mb-10">
-              <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                Next
-              </p>
-              <h2 className="font-display mb-4 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
-                <TypewriterText
-                  key={previewPrompt}
-                  slot="preview-prompt"
-                  activeSlot={activeTypewriter}
-                  text={previewPrompt}
-                  speed={CONVERSATION_PACE.typewriterReply}
-                  startDelay={CONVERSATION_PACE.pauseBeforeReply}
-                  reducedMotion={prefersReducedMotion}
-                  onComplete={() => {
-                    setPreviewPromptComplete(true);
-                    setActiveTypewriter("details-prompt");
-                  }}
-                />
-              </h2>
-            </ConversationReveal>
-
-            <ConversationReveal visible={showDetailsSection}>
-              <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-                Your turn
-              </p>
-              <h2 className="font-display mb-6 text-[clamp(22px,2.6vw,34px)] leading-tight text-[var(--color-blue)]">
-                <TypewriterText
-                  key={detailsPrompt}
-                  slot="details-prompt"
-                  activeSlot={activeTypewriter}
-                  text={detailsPrompt}
-                  speed={CONVERSATION_PACE.typewriterReply}
-                  startDelay={CONVERSATION_PACE.pauseBeforeReply}
-                  reducedMotion={prefersReducedMotion}
-                  onComplete={() => {
-                    setActiveTypewriter(null);
-                    window.setTimeout(() => {
-                      setDetailsPromptComplete(true);
-                    }, prefersReducedMotion ? 0 : CONVERSATION_PACE.pauseBeforeCard);
-                  }}
-                />
-              </h2>
-            </ConversationReveal>
-
-            <ConversationReveal visible={showCard}>
-              {error && (
-                <div className="mb-6 bg-[var(--color-red)] px-4 py-3 text-[13px] text-[var(--color-cream)]">
-                  {error}
+            <div id="principles" className="workspace-doc-scroll">
+              {PRINCIPLE_SUMMARIES.map((principle) => (
+                <div key={principle.num} className="flex gap-3.5">
+                  <span className="w-6 shrink-0 font-display text-[15px] font-extrabold leading-snug text-[var(--color-blue)]">
+                    {principle.num}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="mb-0.5 font-display text-[15px] font-bold text-[var(--color-blue)]">
+                      {principle.title}
+                    </p>
+                    <p className="text-[13px] leading-[1.55] text-[var(--color-mute)]">
+                      {principle.body}
+                    </p>
+                  </div>
                 </div>
-              )}
+              ))}
 
-              {showOtherTypePicker && (
-                <div className="mb-6" style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}>
-                  <p className="font-display mb-3 text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)]">
-                    What kind of contribution is it?
-                  </p>
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {OTHER_TYPES.map((option) => (
-                      <button
-                        key={option.type}
-                        type="button"
-                        data-selected={otherType === option.type}
-                        className="type-card cursor-pointer p-3 text-left"
-                        onClick={() => setOtherType(option.type)}
-                      >
-                        <span className="icon-badge mb-2 h-8 w-8 text-[var(--color-blue)]">
-                          <CharterIcon name={option.icon} size={16} />
-                        </span>
-                        <p className="font-display mb-1 text-[10px] uppercase tracking-[0.08em] text-[var(--color-blue)]">
-                          {option.short}
-                        </p>
-                        <p className="text-[11px] leading-snug text-[var(--color-mute)]">
-                          {option.hint}
-                        </p>
-                      </button>
-                    ))}
+              {proposedFromRecord.map((contribution, index) => (
+                <div
+                  key={contribution.id}
+                  className="flex gap-3.5 border-l-[3px] border-[var(--color-gold)] pl-3"
+                >
+                  <span className="w-6 shrink-0 font-display text-[15px] font-extrabold leading-snug text-[var(--color-gold)]">
+                    {String(PRINCIPLES.length + index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                      <p className="font-display text-[15px] font-bold text-[var(--color-blue)]">
+                        {contribution.principleTitle || "Proposed principle"}
+                      </p>
+                      <span className="rounded-[3px] border border-[var(--color-gold)] px-1.5 py-0.5 font-display text-[7px] font-bold uppercase tracking-[0.1em] text-[var(--color-gold)]">
+                        v1.1
+                      </span>
+                    </div>
+                    <p className="mb-1 text-[13px] leading-[1.55] text-[var(--color-mute)]">
+                      {contribution.text}
+                    </p>
+                    <p className="text-[12px] italic text-[var(--color-mute)]">
+                      — {contribution.name}
+                      {contribution.context ? ` · ${contribution.context}` : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {sessionOnlyPrinciples.map((commit) => (
+                <div
+                  key={`${commit.num}-${commit.title}`}
+                  className="flex gap-3.5 border-l-[3px] border-[var(--color-gold)] pl-3"
+                >
+                  <span className="w-6 shrink-0 font-display text-[15px] font-extrabold leading-snug text-[var(--color-gold)]">
+                    {commit.num}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-0.5 flex flex-wrap items-center gap-2">
+                      <p className="font-display text-[15px] font-bold text-[var(--color-blue)]">
+                        {commit.title}
+                      </p>
+                      <span className="rounded-[3px] border border-[var(--color-gold)] px-1.5 py-0.5 font-display text-[7px] font-bold uppercase tracking-[0.1em] text-[var(--color-gold)]">
+                        v1.1
+                      </span>
+                    </div>
+                    <p className="mb-1 text-[13px] leading-[1.55] text-[var(--color-mute)]">
+                      {commit.body}
+                    </p>
+                    <p className="text-[12px] italic text-[var(--color-mute)]">
+                      — {commit.name}
+                      {commit.context ? ` · ${commit.context}` : ""}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {showDraftSlot && (
+                <div className="draft-slot flex gap-3.5">
+                  <span className="w-6 shrink-0 font-display text-[15px] font-extrabold leading-snug text-[var(--color-red)]">
+                    {draftNum}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <span className="mb-2 inline-block rounded-[3px] bg-[var(--color-red)] px-1.5 py-0.5 font-display text-[7px] font-bold uppercase tracking-[0.12em] text-white">
+                      Drafting · you
+                    </span>
+                    <p className="mb-1 font-display text-[16px] font-bold text-[var(--color-blue)]">
+                      {draftTitleDisplay}
+                    </p>
+                    <p className="mb-1 text-[13px] leading-[1.55] text-[var(--color-mute)]">
+                      {draftBodyDisplay}
+                    </p>
+                    <p className="text-[12px] italic text-[var(--color-mute)]">{draftByline}</p>
                   </div>
                 </div>
               )}
+            </div>
 
-              <p className="font-display mb-3 text-[10px] tracking-[0.2em] uppercase text-[var(--color-blue)]">
-                {isSignature ? "Your signature card" : "Your contribution card"}
+            <div id="voices" className="mt-5 border-t border-[var(--color-rule-light)] pt-4">
+              <p className="mb-3 font-display text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--color-red)]">
+                Recent voices
               </p>
-              <p className="mb-4 text-[13px] leading-[1.6] text-[var(--color-mute)]">
-                Edit directly in the card below. This is what will appear in the public record.
-              </p>
-
-              <div className="preview-card p-7">
-                <ContributionCard
-                  kind={kind}
-                  otherType={otherType}
-                  name={name}
-                  context={context}
-                  principleTitle={principleTitle}
-                  text={text}
-                  showContext={showCardContext}
-                  showBody={showCardBody}
-                  showAttribution={showCardAttribution}
-                  onNameChange={setName}
-                  onContextChange={setContext}
-                  onPrincipleTitleChange={setPrincipleTitle}
-                  onTextChange={setText}
-                />
-              </div>
-
-              {isSignature && showCardContext && (
-                <p
-                  className="mt-4 text-[12px] leading-[1.6] text-[var(--color-mute)]"
-                  style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}
-                >
-                  Your name joins the public signatory record. Optional context appears beneath it.
+              {recentVoices.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {recentVoices.map((voice, index) => (
+                    <div key={`${voice.tag}-${index}`} className="voice-row">
+                      <span className="voice-tag">{voice.tag}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="mb-0.5 text-[13px] leading-[1.5] text-[var(--color-ink)]">
+                          {voice.text}
+                        </p>
+                        <p className="text-[12px] italic text-[var(--color-mute)]">{voice.by}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[13px] leading-[1.55] text-[var(--color-mute)]">
+                  Contributions will appear here as people add their voice.
                 </p>
               )}
-
-              <ConversationReveal visible={Boolean(showSubmit)} className="mt-8">
-                <div
-                  className="mb-6"
-                  style={{ animation: `riseIn ${CONVERSATION_PACE.revealDuration}s ease forwards` }}
-                >
-                  <label className="sr-only" htmlFor="contributor-email">
-                    Email for follow-up (optional)
-                  </label>
-                  <input
-                    id="contributor-email"
-                    className="w-full border-0 border-b border-[var(--color-rule-light)] bg-transparent px-0 py-2 text-[14px] text-[var(--color-ink)] outline-none transition-colors duration-200 focus:border-[var(--color-red)] placeholder:text-[var(--color-mute)]/45"
-                    type="email"
-                    placeholder="Email for follow-up (optional, never shown publicly)"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    autoComplete="email"
-                  />
-                  <p className="mt-2 text-[11px] leading-[1.5] text-[var(--color-mute)]">
-                    Share an email if you&apos;d like questions, context, or updates about v1.1.
-                  </p>
-                </div>
-                <Pill
-                  variant="red"
-                  onClick={handleSubmit}
-                  className="w-full justify-center text-[14px]"
-                >
-                  {loading ? "Submitting..." : selectedOption?.submitLabel ?? `Submit ${getKindLabel(kind)}`}
-                </Pill>
-              </ConversationReveal>
-            </ConversationReveal>
+            </div>
+            <div className="mt-5 flex gap-3 border-t border-[var(--color-rule-light)] pt-4">
+              <span className="shrink-0 font-mono text-[16px] leading-snug text-[var(--color-red)]" aria-hidden="true">
+                →
+              </span>
+              <p className="text-[12px] leading-[1.6] text-[var(--color-mute)]">
+                <span className="font-display text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--color-blue)]">
+                  Where this goes —{" "}
+                </span>
+                Every principle, commitment, challenge, and voice added here is synthesized into a
+                proposed strategy for how Philadelphia builds technology next.
+              </p>
+            </div>
           </div>
-        ) : null}
+        </div>
       </div>
     </section>
   );
-}
-
-function ContributionCard({
-  kind,
-  otherType,
-  name,
-  context,
-  principleTitle,
-  text,
-  showContext,
-  showBody,
-  showAttribution,
-  onNameChange,
-  onContextChange,
-  onPrincipleTitleChange,
-  onTextChange,
-}: {
-  kind: ContributionKind | "";
-  otherType: ContributionType;
-  name: string;
-  context: string;
-  principleTitle: string;
-  text: string;
-  showContext: boolean;
-  showBody: boolean;
-  showAttribution: boolean;
-  onNameChange: (value: string) => void;
-  onContextChange: (value: string) => void;
-  onPrincipleTitleChange: (value: string) => void;
-  onTextChange: (value: string) => void;
-}) {
-  if (kind === "signature") {
-    return (
-      <div>
-        <div className="mb-6 flex items-start gap-3">
-          <span className="icon-badge shrink-0 h-10 w-10 text-[var(--color-gold)]">
-            <CharterIcon name="star" size={20} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="font-display mb-2 text-[10px] uppercase tracking-[0.2em] text-[var(--color-red)]">
-              Signatory
-            </p>
-            <label className="sr-only" htmlFor="signature-name">
-              Your name
-            </label>
-            <input
-              id="signature-name"
-              className={cardInputTitle}
-              type="text"
-              placeholder="Your name (required)"
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
-              autoComplete="name"
-              required
-            />
-            {showContext && (
-              <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
-                <label className="sr-only" htmlFor="signature-context">
-                  City or role
-                </label>
-                <input
-                  id="signature-context"
-                  className={cardInputContext}
-                  type="text"
-                  placeholder="Philadelphia, PA · Designer (optional)"
-                  value={context}
-                  onChange={(event) => onContextChange(event.target.value)}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <p className="border-t border-[var(--color-rule-light)] pt-4 text-[12px] leading-[1.6] text-[var(--color-mute)]">
-          This is a declaration of intent: technology in Philadelphia should serve everyone.
-        </p>
-      </div>
-    );
-  }
-
-  if (kind === "principle") {
-    return (
-      <div>
-        <p className="font-display mb-3 text-[9px] uppercase tracking-[0.25em] text-[var(--color-red)]">
-          A new principle
-        </p>
-        <label className="sr-only" htmlFor="principle-title">
-          Principle title
-        </label>
-        <input
-          id="principle-title"
-          className={cardInputPrincipleTitle}
-          type="text"
-          placeholder="Principle title"
-          value={principleTitle}
-          onChange={(event) => onPrincipleTitleChange(event.target.value)}
-        />
-        {showBody && (
-          <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
-            <label className="sr-only" htmlFor="principle-body">
-              Principle body
-            </label>
-            <textarea
-              id="principle-body"
-              className={cardTextarea}
-              placeholder="Describe the principle in one to three sentences."
-              value={text}
-              onChange={(event) => onTextChange(event.target.value)}
-              rows={4}
-            />
-            {text.length > 0 && (
-              <p className="mb-5 text-[11px] text-[var(--color-mute)]">{text.length} characters</p>
-            )}
-          </div>
-        )}
-        {showAttribution && (
-          <div
-            className="border-t border-[var(--color-rule-light)] pt-4"
-            style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}
-          >
-            <label className="sr-only" htmlFor="principle-name">
-              Your name
-            </label>
-            <input
-              id="principle-name"
-              className={`${cardAttributionInput} mb-2`}
-              type="text"
-              placeholder="Your name (required)"
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
-              autoComplete="name"
-              required
-            />
-            <label className="sr-only" htmlFor="principle-context">
-              City or role
-            </label>
-            <input
-              id="principle-context"
-              className={cardAttributionInput}
-              type="text"
-              placeholder="City / role (optional)"
-              value={context}
-              onChange={(event) => onContextChange(event.target.value)}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (kind === "other") {
-    return (
-      <div>
-        <p className="font-display mb-3 text-[9px] uppercase tracking-[0.25em] text-[var(--color-red)]">
-          {otherType}
-        </p>
-        {showBody && (
-          <div style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}>
-            <label className="sr-only" htmlFor="contribution-body">
-              Your contribution
-            </label>
-            <textarea
-              id="contribution-body"
-              className={cardTextarea}
-              placeholder="Write the refinement, question, example, or challenge you want to add."
-              value={text}
-              onChange={(event) => onTextChange(event.target.value)}
-              rows={4}
-            />
-            {text.length > 0 && (
-              <p className="mb-5 text-[11px] text-[var(--color-mute)]">{text.length} characters</p>
-            )}
-          </div>
-        )}
-        {showAttribution && (
-          <div
-            className="border-t border-[var(--color-rule-light)] pt-4"
-            style={{ animation: `riseIn ${CONVERSATION_PACE.fieldRevealDuration}s ease forwards` }}
-          >
-            <label className="sr-only" htmlFor="contribution-name">
-              Your name
-            </label>
-            <input
-              id="contribution-name"
-              className={`${cardAttributionInput} mb-2`}
-              type="text"
-              placeholder="Your name (required)"
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
-              autoComplete="name"
-              required
-            />
-            <label className="sr-only" htmlFor="contribution-context">
-              City or role
-            </label>
-            <input
-              id="contribution-context"
-              className={cardAttributionInput}
-              type="text"
-              placeholder="City / role (optional)"
-              value={context}
-              onChange={(event) => onContextChange(event.target.value)}
-            />
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return null;
 }

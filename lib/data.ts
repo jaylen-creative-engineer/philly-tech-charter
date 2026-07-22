@@ -32,3 +32,37 @@ export const PRINCIPLES: Principle[] = [
     body: "We name our metrics before we celebrate our progress. Efficiency, engagement, and growth are proxies. Human flourishing is the target. We will not mistake one for the other.",
   },
 ];
+
+/** Compact blurbs for the contribution workspace living-document panel. */
+export const PRINCIPLE_SUMMARIES: Principle[] = [
+  {
+    num: "01",
+    title: "Intention before implementation",
+    body: "Name what we are building toward before we build it.",
+  },
+  {
+    num: "02",
+    title: "Systems think, not symptoms treat",
+    body: "Address root causes, not the surface they show up on.",
+  },
+  {
+    num: "03",
+    title: "Culture as infrastructure",
+    body: "Treat culture as load-bearing, with the seriousness we give technology.",
+  },
+  {
+    num: "04",
+    title: "Access is not optional",
+    body: "The benefits of intelligent technology must be broadly shared.",
+  },
+  {
+    num: "05",
+    title: "Evolve in public",
+    body: "Every change is visible. Every voice is credited.",
+  },
+  {
+    num: "06",
+    title: "Measure what matters",
+    body: "Human flourishing is the target, not the proxies for it.",
+  },
+];

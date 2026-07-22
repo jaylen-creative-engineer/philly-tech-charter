@@ -1,24 +1,41 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CharterIcon } from "./CharterIcons";
+import LandingContent, { type LandingIntent } from "./LandingContent";
 
 interface Props {
-  onComplete: () => void;
+  onComplete: (intent?: LandingIntent) => void;
+  principlesCount?: number;
+  voicesCount?: number;
+  versionLabel?: string;
 }
 
-const SEEN_KEY = "ptc-welcomed-v3";
-const CURRENT_YEAR = new Date().getFullYear();
+const SEEN_KEY = "ptc-welcomed-v4";
+
+/** Entrance animation settles before CTAs become the primary action. */
+const ACTIONS_READY_MS = 1400;
 
 type Phase = "intro" | "exit" | "done";
 
-export default function Welcome({ onComplete }: Props) {
+export default function Welcome({
+  onComplete,
+  principlesCount,
+  voicesCount,
+  versionLabel,
+}: Props) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [shouldShow, setShouldShow] = useState(true);
+  const [actionsReady, setActionsReady] = useState(false);
+  const [pendingIntent, setPendingIntent] = useState<LandingIntent | undefined>();
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      setActionsReady(true);
+    }
+
     if (!reduceMotion && !sessionStorage.getItem(SEEN_KEY)) return;
+
     const t = setTimeout(() => {
       setShouldShow(false);
       setPhase("done");
@@ -29,7 +46,14 @@ export default function Welcome({ onComplete }: Props) {
 
   useEffect(() => {
     if (!shouldShow || phase !== "intro") return;
-    const t = setTimeout(() => setPhase("exit"), 3800);
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      setActionsReady(true);
+      return;
+    }
+
+    const t = setTimeout(() => setActionsReady(true), ACTIONS_READY_MS);
     return () => clearTimeout(t);
   }, [shouldShow, phase]);
 
@@ -38,10 +62,10 @@ export default function Welcome({ onComplete }: Props) {
     sessionStorage.setItem(SEEN_KEY, "1");
     const t = setTimeout(() => {
       setPhase("done");
-      onComplete();
+      onComplete(pendingIntent);
     }, 700);
     return () => clearTimeout(t);
-  }, [phase, onComplete]);
+  }, [phase, onComplete, pendingIntent]);
 
   useEffect(() => {
     if (phase === "done") return;
@@ -51,9 +75,11 @@ export default function Welcome({ onComplete }: Props) {
     };
   }, [phase]);
 
-  const enter = useCallback(() => {
+  const enter = useCallback((intent: LandingIntent) => {
+    if (!actionsReady) return;
+    setPendingIntent(intent);
     setPhase((p) => (p === "intro" ? "exit" : p));
-  }, []);
+  }, [actionsReady]);
 
   if (!shouldShow || phase === "done") return null;
 
@@ -65,57 +91,30 @@ export default function Welcome({ onComplete }: Props) {
   return (
     <div
       data-welcome="true"
-      className="fixed inset-0 z-[100] cursor-pointer overflow-hidden"
-      role="button"
-      tabIndex={0}
-      aria-label="Enter the Philly Tech Charter"
-      onClick={enter}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") enter();
-      }}
+      className="fixed inset-0 z-[100] overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Welcome to the Philly Tech Charter"
     >
       <div
         className={`${panel} ${lift} z-[1] bg-[var(--color-red)]`}
         style={{ transitionDelay: exiting ? "180ms" : "0ms" }}
       />
       <div
-        className={`${panel} ${lift} z-[2] welcome-surface overflow-hidden border-b border-[var(--color-rule-light)]`}
+        className={`${panel} ${lift} z-[2] welcome-surface overflow-y-auto border-b border-[var(--color-rule-light)]`}
       >
-        <div className="relative z-10 flex h-full flex-col items-center justify-center px-8 text-center">
-          <div className="welcome-animate-rise-1">
-            <span className="welcome-era" aria-label={`1776 to ${CURRENT_YEAR}`}>
-              <span className="welcome-era-year">1776</span>
-              <span className="welcome-era-line" aria-hidden="true" />
-              <span className="welcome-era-year">{CURRENT_YEAR}</span>
-            </span>
-          </div>
+        <div className="hero-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+        <div className="hero-backdrop pointer-events-none" aria-hidden="true" />
 
-          <h1
-            className="welcome-animate-rise-2 mt-10 max-w-3xl font-display leading-[1.05] tracking-[-0.02em] text-[var(--color-blue)]"
-            style={{ fontSize: "clamp(36px, 7vw, 72px)" }}
-          >
-            A Civic Commitment
-            <br />
-            <span className="text-[var(--color-red)]">for Philadelphia</span>
-          </h1>
-
-          <p className="welcome-animate-rise-3 mt-8 max-w-md text-[15px] leading-[1.7] text-[var(--color-mute)]">
-            A living document for how this city shapes technology, written in the
-            tradition of those who first put their intentions to paper here.
-          </p>
-
-          <p className="welcome-animate-rise-3 mt-4 font-display text-[10px] uppercase tracking-[0.22em] text-[var(--color-mute)]">
-            Philadelphia · America&apos;s 250th
-          </p>
-
-          <button
-            type="button"
-            className="welcome-animate-rise-4 welcome-enter-btn mt-12 inline-flex items-center gap-2 px-10 py-3.5 font-display text-[11px] uppercase tracking-[0.14em] pointer-events-none"
-            tabIndex={-1}
-          >
-            Enter the Charter
-            <CharterIcon name="chevron-right" size={14} />
-          </button>
+        <div className="relative z-10 flex min-h-full flex-col items-center justify-center px-6 py-16 text-center">
+          <LandingContent
+            animate
+            actionsReady={actionsReady && !exiting}
+            principlesCount={principlesCount}
+            voicesCount={voicesCount}
+            versionLabel={versionLabel}
+            onIntent={enter}
+          />
         </div>
 
         <div className="absolute inset-x-0 bottom-0 flex h-[3px]" aria-hidden="true">

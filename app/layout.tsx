@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Syne, DM_Sans, Pinyon_Script } from "next/font/google";
+import { Archivo, DM_Sans, Pinyon_Script } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
+const archivo = Archivo({
   subsets: ["latin"],
-  variable: "--font-syne",
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-archivo",
 });
 
 const dmSans = DM_Sans({
@@ -35,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${syne.variable} ${dmSans.variable} ${pinyonScript.variable}`}>
+    <html lang="en" className={`${archivo.variable} ${dmSans.variable} ${pinyonScript.variable}`}>
       <body>{children}</body>
     </html>
   );

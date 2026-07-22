@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function ContributePage() {
   return (
     <>
-      <Nav visible sectionHrefPrefix="/#" />
+      <Nav visible forceSurface variant="landing" />
       <main>
         <ContributionExperience />
         <Footer />

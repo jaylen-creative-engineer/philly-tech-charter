@@ -1,64 +1,48 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import Welcome from "./components/Welcome";
 import Nav from "./components/Nav";
 import Hero from "./sections/Hero";
-import Intro from "./sections/Intro";
-import Statement from "./sections/Statement";
-import Document from "./sections/Document";
-import Principles from "./sections/Principles";
-import Contribute from "./sections/Contribute";
-import Voices from "./sections/Voices";
-import SignatoryWall from "./sections/SignatoryWall";
-import ClosingCTA from "./sections/ClosingCTA";
 import Footer from "./sections/Footer";
+import type { LandingIntent } from "./components/LandingContent";
+import { PRINCIPLES } from "../lib/data";
 import { useCharterData } from "../lib/useCharterData";
 
 export default function Home() {
+  const router = useRouter();
   const [entered, setEntered] = useState(false);
-  const handleWelcomeComplete = useCallback(() => setEntered(true), []);
 
-  const {
-    contributions,
-    signatories,
-    contributionsStatus,
-    signatoriesStatus,
-    contributionsError,
-    signatoriesError,
-    refreshContributions,
-    refreshSignatories,
-  } = useCharterData();
+  const { contributions, signatories } = useCharterData();
+
+  const voicesCount = contributions.length + signatories.length;
+  const proposedPrinciples = contributions.filter((c) => c.type === "A new principle").length;
+  const versionLabel = proposedPrinciples > 0 ? "1.1" : "1.0";
+
+  const handleWelcomeComplete = useCallback(
+    (intent?: LandingIntent) => {
+      setEntered(true);
+
+      // Both paths lead into the contribution workspace — charter lives there as the living document.
+      if (intent === "contribute" || intent === "charter") {
+        router.push("/contribute");
+      }
+    },
+    [router],
+  );
 
   return (
     <>
-      <Welcome onComplete={handleWelcomeComplete} />
-      <Nav visible={entered} />
+      <Welcome
+        onComplete={handleWelcomeComplete}
+        principlesCount={PRINCIPLES.length}
+        voicesCount={voicesCount}
+        versionLabel={versionLabel}
+      />
+      <Nav visible={entered} variant="landing" />
       <main data-entered={entered}>
-        <Hero />
-        <div aria-hidden="true" className="flex h-[3px]">
-          <div className="flex-[2] bg-[var(--color-red)]" />
-          <div className="flex-1 bg-[var(--color-white)]" />
-          <div className="flex-[2] bg-[var(--color-blue)]" />
-        </div>
-        <Intro />
-        <Statement />
-        <Document />
-        <Principles />
-        <Contribute />
-        <Voices
-          contributions={contributions}
-          status={contributionsStatus}
-          error={contributionsError}
-          onRetry={refreshContributions}
-        />
-        <SignatoryWall
-          signatories={signatories}
-          status={signatoriesStatus}
-          error={signatoriesError}
-          onRetry={refreshSignatories}
-        />
-        <ClosingCTA />
+        <Hero voicesCount={voicesCount} versionLabel={versionLabel} />
         <Footer />
       </main>
     </>
